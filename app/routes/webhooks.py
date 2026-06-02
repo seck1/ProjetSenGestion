@@ -170,6 +170,14 @@ def signature_callback():
     from app.models.facture import Facture, LigneFacture
     from datetime import datetime, date, timedelta
 
+    # Vérification HMAC obligatoire
+    secret = current_app.config.get('SIGNATURE_WEBHOOK_SECRET')
+    if secret:
+        sig = request.headers.get('X-Signature', '')
+        expected = hmac.new(secret.encode(), request.data, hashlib.sha256).hexdigest()
+        if not hmac.compare_digest(sig, expected):
+            return jsonify({'error': 'Signature invalide'}), 401
+
     data = request.get_json(silent=True) or {}
     current_app.logger.info(f"Webhook signature reçu : {data}")
 

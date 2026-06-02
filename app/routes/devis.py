@@ -42,10 +42,10 @@ def nouveau():
     clients = Client.query.filter_by(tenant_id=tid, actif=True).order_by(Client.nom).all()
 
     if request.method == 'POST':
-        client_id = int(request.form.get('client_id'))
+        client = Client.query.filter_by(id=int(request.form.get('client_id')), tenant_id=tid).first_or_404()
         devis = Devis(
             tenant_id    = tid,
-            client_id    = client_id,
+            client_id    = client.id,
             user_id      = current_user.id,
             numero       = _gen_numero(tid),
             objet        = request.form.get('objet', '').strip(),

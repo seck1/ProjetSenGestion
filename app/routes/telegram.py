@@ -39,6 +39,12 @@ def download_file(file_id) -> bytes:
 
 @telegram_bp.route('/webhook', methods=['POST'])
 def webhook():
+    import hmac
+    expected = current_app.config.get('TELEGRAM_WEBHOOK_SECRET')
+    supplied = request.headers.get('X-Telegram-Bot-Api-Secret-Token', '')
+    if expected and not hmac.compare_digest(supplied, expected):
+        return jsonify({'ok': False}), 401
+
     data = request.get_json(silent=True) or {}
     message = data.get('message') or data.get('edited_message')
     if not message:

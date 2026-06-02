@@ -20,7 +20,10 @@ def login():
         user = User.query.filter_by(email=email).first()
         if user and user.check_password(password) and user.actif:
             login_user(user, remember=remember)
+            from urllib.parse import urlparse
             next_page = request.args.get('next')
+            if next_page and (not next_page.startswith('/') or next_page.startswith('//') or urlparse(next_page).netloc):
+                next_page = None
             return redirect(next_page or url_for('dashboard.index'))
         flash('Email ou mot de passe incorrect.', 'error')
 
@@ -146,7 +149,6 @@ def reset_password(token):
 
         user.set_password(password)
         user.token_validation = None
-        user.actif = True
         db.session.commit()
         flash('Mot de passe réinitialisé avec succès. Connectez-vous.', 'success')
         return redirect(url_for('auth.login'))
