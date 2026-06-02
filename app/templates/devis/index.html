@@ -1,0 +1,58 @@
+{% extends "layouts/base.html" %}
+{% block title %}Devis{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div class="page-header-left"><h1>Devis</h1><p>{{ counts['tous'] }} devis · Période en cours</p></div>
+  <div class="page-header-actions">
+    <a href="{{ url_for('devis.reunion') }}" class="btn btn-secondary"><i data-lucide="mic" style="width:16px;height:16px;"></i> Réunion audio</a>
+    <a href="{{ url_for('devis.nouveau') }}" class="btn btn-gold"><i data-lucide="plus" style="width:16px;height:16px;"></i> Nouveau devis</a>
+  </div>
+</div>
+<div class="card card-p0">
+  <div class="status-chips">
+    {% for s, label in [('tous','Tous'),('signe','Signé'),('envoye','Envoyé'),('attente','En attente'),('refuse','Refusé'),('brouillon','Brouillon')] %}
+    <a href="{{ url_for('devis.index', statut=s) }}" class="chip {% if statut == s %}active{% endif %}">
+      {{ label }} <span class="chip-count">{{ counts.get(s, counts.get('tous', 0)) }}</span>
+    </a>
+    {% endfor %}
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>N° Devis</th><th>Client</th><th>Date</th><th style="text-align:right;">Montant TTC</th><th>Statut</th><th>Actions</th></tr></thead>
+      <tbody>
+        {% for d in devis_list %}
+        {% set statut_map = {'signe':('pill-signe','check-circle-2','Signé'),'envoye':('pill-envoye','send','Envoyé'),'ouvert':('pill-ouvert','eye','Ouvert'),'refuse':('pill-refuse','x-circle','Refusé'),'brouillon':('pill-brouillon','pencil-line','Brouillon')} %}
+        {% set cls, icon, label = statut_map.get(d.statut, ('pill-brouillon','file','Brouillon')) %}
+        <tr>
+          <td><span style="font-family:Arial,Helvetica,sans-serif;font-size:16px;">{{ d.numero }}</span></td>
+          <td>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <div class="avatar" style="width:46px;height:46px;font-size:16px;background:#1A3A6B;">{{ d.client.initiales if d.client else '?' }}</div>
+              <div><div style="font-weight:600;font-size:16px;">{{ d.client.nom_complet if d.client else '' }}</div><div style="font-size:16px;color:#6B7280;">{{ d.client.entreprise or '' if d.client else '' }}</div></div>
+            </div>
+          </td>
+          <td style="font-size:16px;color:#6B7280;">{{ d.created_at.strftime('%d/%m/%y') }}</td>
+          <td class="amount">{{ "{:,.0f}".format(d.total_ttc or 0).replace(",", " ") }} FCFA</td>
+          <td><span class="pill {{ cls }}"><i data-lucide="{{ icon }}" style="width:12px;height:12px;"></i> {{ label }}</span></td>
+          <td>
+            <div style="display:flex;gap:6px;flex-wrap:wrap;">
+              <a href="{{ url_for('devis.detail', devis_id=d.id) }}" class="btn btn-primary btn-sm" style="font-size:14px;">Voir</a>
+              <a href="{{ url_for('devis.telecharger_pdf', devis_id=d.id) }}" class="btn btn-primary btn-sm" style="font-size:14px;">PDF</a>
+              <form method="POST" action="{{ url_for('factures.depuis_devis', devis_id=d.id) }}" style="display:inline;" onsubmit="return confirm('Convertir le devis {{ d.numero }} en facture ?')">
+                <button type="submit" class="btn btn-primary btn-sm" style="font-size:14px;">Facturer</button>
+              </form>
+              <form method="POST" action="{{ url_for('devis.supprimer', devis_id=d.id) }}" style="display:inline;" onsubmit="return confirm('Supprimer définitivement le devis {{ d.numero }} ?')">
+                <button type="submit" class="btn btn-danger btn-sm" style="font-size:14px;">Supprimer</button>
+              </form>
+            </div>
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="6" style="text-align:center;padding:48px;color:#9CA3AF;">Aucun devis.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+<a href="{{ url_for('devis.nouveau') }}" class="fab"><i data-lucide="plus" style="width:18px;height:18px;"></i> Nouveau devis</a>
+{% endblock %}

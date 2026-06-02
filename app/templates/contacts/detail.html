@@ -1,0 +1,173 @@
+{% extends "layouts/base.html" %}
+{% block title %}{{ c.nom_complet }}{% endblock %}
+{% block content %}
+
+<div class="page-header">
+  <div class="page-header-left">
+    <a href="{{ url_for('contacts.index') }}" style="color:var(--fg-3);text-decoration:none;font-size:14px;display:flex;align-items:center;gap:4px;margin-bottom:8px;">
+      <i data-lucide="arrow-left" style="width:14px;height:14px;"></i> Contacts
+    </a>
+    <h1>{{ c.nom_complet }}</h1>
+    <p>{{ c.fonction or '' }}{% if c.entreprise %} · {{ c.entreprise }}{% endif %}</p>
+  </div>
+  <div class="page-header-actions">
+    <a href="{{ url_for('contacts.modifier', contact_id=c.id) }}" class="btn btn-secondary">
+      <i data-lucide="pencil" style="width:15px;height:15px;"></i> Modifier
+    </a>
+    {% if c.est_converti %}
+    <a href="{{ url_for('clients.index') }}" class="btn btn-gold">
+      <i data-lucide="user-check" style="width:15px;height:15px;"></i> Voir fiche client
+    </a>
+    {% else %}
+    <form method="POST" action="{{ url_for('contacts.convertir_en_client', contact_id=c.id) }}" style="display:inline;">
+      <button type="submit" class="btn btn-primary">
+        <i data-lucide="user-plus" style="width:15px;height:15px;"></i> Convertir en Client
+      </button>
+    </form>
+    {% endif %}
+  </div>
+</div>
+
+<div style="display:grid;grid-template-columns:340px 1fr;gap:24px;align-items:start;">
+
+  <!-- Carte de visite -->
+  <div class="card" style="padding:0;overflow:hidden;border-radius:20px;">
+    <!-- Header navy -->
+    <div style="background:#1A3A6B;padding:32px 24px 36px;text-align:center;position:relative;">
+      {% if c.source == 'scan_carte' %}
+      <span class="pill" style="position:absolute;top:14px;left:14px;font-size:11px;background:rgba(255,255,255,0.18);color:#fff;border:1px solid rgba(255,255,255,0.30);">
+        <i data-lucide="scan-line" style="width:10px;height:10px;"></i> Carte IA
+      </span>
+      {% elif c.source == 'qrcode' %}
+      <span class="pill" style="position:absolute;top:14px;left:14px;font-size:11px;background:rgba(255,255,255,0.18);color:#fff;border:1px solid rgba(255,255,255,0.30);">
+        <i data-lucide="qr-code" style="width:10px;height:10px;"></i> QR Code
+      </span>
+      {% endif %}
+      {% if c.est_converti %}
+      <span class="pill" style="position:absolute;top:14px;right:14px;font-size:11px;background:rgba(184,134,11,0.25);color:#FFD700;border:1px solid rgba(184,134,11,0.50);">
+        <i data-lucide="check-circle-2" style="width:10px;height:10px;"></i> Client
+      </span>
+      {% endif %}
+
+      <div style="width:80px;height:80px;border-radius:50%;border:3px solid rgba(255,255,255,0.4);background:rgba(255,255,255,0.15);display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:700;color:#fff;margin:0 auto 16px;">
+        {{ c.initiales }}
+      </div>
+      <div style="font-size:20px;font-weight:700;color:#fff;margin-bottom:4px;">{{ c.nom_complet }}</div>
+      {% if c.fonction %}<div style="font-size:14px;color:rgba(255,255,255,0.70);margin-bottom:6px;">{{ c.fonction }}</div>{% endif %}
+      {% if c.entreprise %}<div style="font-size:15px;font-weight:700;color:#B8860B;">{{ c.entreprise }}</div>{% endif %}
+    </div>
+
+    <!-- Séparateur or -->
+    <div style="height:3px;background:linear-gradient(90deg,transparent,#B8860B 40%,#D4A017 50%,#B8860B 60%,transparent);"></div>
+
+    <!-- Infos contact -->
+    <div style="padding:20px 20px 8px;">
+      {% if c.telephone %}
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">
+        <div style="width:34px;height:34px;border-radius:8px;background:var(--color-primary-soft);display:flex;align-items:center;justify-content:center;color:var(--color-primary);flex-shrink:0;">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.81a19.79 19.79 0 01-3.07-8.72A2 2 0 012 1h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.09 8.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/></svg>
+        </div>
+        <a href="tel:{{ c.telephone }}" style="color:var(--fg-1);text-decoration:none;font-size:16px;">{{ c.telephone }}</a>
+      </div>
+      {% endif %}
+      {% if c.email %}
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">
+        <div style="width:34px;height:34px;border-radius:8px;background:var(--color-primary-soft);display:flex;align-items:center;justify-content:center;color:var(--color-primary);flex-shrink:0;">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
+        </div>
+        <a href="mailto:{{ c.email }}" style="color:var(--color-primary);text-decoration:none;font-size:16px;word-break:break-all;">{{ c.email }}</a>
+      </div>
+      {% endif %}
+      {% if c.adresse %}
+      <div style="display:flex;align-items:flex-start;gap:12px;margin-bottom:14px;">
+        <div style="width:34px;height:34px;border-radius:8px;background:var(--color-primary-soft);display:flex;align-items:center;justify-content:center;color:var(--color-primary);flex-shrink:0;">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+        </div>
+        <span style="color:var(--fg-2);font-size:16px;line-height:1.4;">{{ c.adresse }}</span>
+      </div>
+      {% endif %}
+      {% if c.site_web %}
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">
+        <div style="width:34px;height:34px;border-radius:8px;background:var(--color-primary-soft);display:flex;align-items:center;justify-content:center;color:var(--color-primary);flex-shrink:0;">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+        </div>
+        <a href="{{ c.site_web if c.site_web.startswith('http') else 'https://' ~ c.site_web }}" target="_blank" style="color:var(--color-primary);text-decoration:none;font-size:16px;">{{ c.site_web }}</a>
+      </div>
+      {% endif %}
+      {% if c.evenement %}
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">
+        <div style="width:34px;height:34px;border-radius:8px;background:var(--color-primary-soft);display:flex;align-items:center;justify-content:center;color:var(--color-primary);flex-shrink:0;">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="4" rx="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>
+        </div>
+        <span style="color:var(--fg-3);font-size:16px;">{{ c.evenement }}</span>
+      </div>
+      {% endif %}
+    </div>
+
+    <!-- Actions -->
+    <div style="display:flex;flex-wrap:wrap;gap:8px;padding:8px 16px 16px;">
+      {% if c.telephone %}
+      <a href="tel:{{ c.telephone }}" class="btn btn-secondary btn-sm" style="flex:1;">
+        <i data-lucide="phone" style="width:14px;height:14px;"></i> Appeler
+      </a>
+      <a href="https://wa.me/{{ c.telephone | replace(' ','') | replace('+','') | replace('-','') }}" target="_blank" class="btn btn-secondary btn-sm" style="flex:1;">
+        <svg style="width:14px;height:14px;fill:currentColor;" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.127.558 4.126 1.533 5.862L.057 23.012a.75.75 0 00.931.931l5.15-1.476A11.952 11.952 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.891 0-3.667-.523-5.184-1.433l-.372-.217-3.857 1.107 1.06-3.747-.237-.389A9.953 9.953 0 012 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/></svg>
+        WhatsApp
+      </a>
+      {% endif %}
+      <a href="{{ url_for('contacts.vcard', contact_id=c.id) }}" class="btn btn-secondary btn-sm" style="flex:1;">
+        <i data-lucide="download" style="width:14px;height:14px;"></i> vCard
+      </a>
+    </div>
+  </div>
+
+  <!-- Panneau droite : notes + historique -->
+  <div style="display:flex;flex-direction:column;gap:20px;">
+
+    {% if c.notes %}
+    <div class="card">
+      <div class="card-title" style="margin-bottom:12px;">Notes</div>
+      <p style="font-size:16px;color:var(--fg-2);line-height:1.7;white-space:pre-line;">{{ c.notes }}</p>
+    </div>
+    {% endif %}
+
+    <div class="card">
+      <div class="card-title" style="margin-bottom:4px;">Informations</div>
+      <div style="font-size:14px;color:var(--fg-3);margin-bottom:16px;">Ajouté le {{ c.created_at.strftime('%d %B %Y') }}</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        <div>
+          <div style="font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:1px;color:var(--fg-4);margin-bottom:4px;">Source</div>
+          <div style="font-size:16px;">
+            {% if c.source == 'scan_carte' %}Scan carte IA
+            {% elif c.source == 'qrcode' %}QR Code
+            {% else %}Manuel{% endif %}
+          </div>
+        </div>
+        {% if c.confiance_ia %}
+        <div>
+          <div style="font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:1px;color:var(--fg-4);margin-bottom:4px;">Confiance IA</div>
+          <div style="font-size:16px;">{{ c.confiance_ia }}%</div>
+        </div>
+        {% endif %}
+        <div>
+          <div style="font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:1px;color:var(--fg-4);margin-bottom:4px;">Statut</div>
+          <div style="font-size:16px;">{{ 'Client' if c.est_converti else 'Contact' }}</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Danger zone -->
+    <div class="card" style="border-color:#FEE2E2;">
+      <div class="card-title" style="margin-bottom:12px;color:var(--color-danger-deep);">Zone dangereuse</div>
+      <form method="POST" action="{{ url_for('contacts.supprimer', contact_id=c.id) }}"
+            onsubmit="return confirm('Supprimer définitivement ce contact ?');">
+        <button type="submit" class="btn btn-danger">
+          <i data-lucide="trash-2" style="width:15px;height:15px;"></i> Supprimer ce contact
+        </button>
+      </form>
+    </div>
+
+  </div>
+</div>
+
+{% endblock %}

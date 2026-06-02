@@ -1,0 +1,199 @@
+{% extends "layouts/base.html" %}
+{% block title %}Scan carte de visite{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div class="page-header-left">
+    <h1>Nouveau client par scan carte de visite</h1>
+    <p>Importez une carte de visite — l'IA Claude extrait les coordonnées automatiquement.</p>
+  </div>
+  <div class="page-header-actions">
+    <a href="{{ url_for('clients.index') }}" class="btn btn-ghost">
+      <i data-lucide="rotate-ccw" style="width:16px;height:16px;"></i> Recommencer
+    </a>
+  </div>
+</div>
+
+<div class="grid-1-1">
+  <!-- Panneau gauche : upload -->
+  <div class="card">
+    <div class="card-header">
+      <i data-lucide="image" style="width:18px;height:18px;color:#1A3A6B;"></i>
+      <div>
+        <div class="card-title">Carte scannée</div>
+        <div class="card-sub" id="scanStatus">Importez ou prenez en photo une carte de visite</div>
+      </div>
+      <span class="pill pill-brouillon" id="scanBadge" style="margin-left:auto;">En attente</span>
+    </div>
+    <div style="padding:24px;">
+      <div id="dropZone" style="
+        height:280px; border:2px dashed var(--border-default); border-radius:12px;
+        display:flex; flex-direction:column; align-items:center; justify-content:center;
+        gap:12px; cursor:pointer; transition:border-color 200ms; background:var(--bg-app);
+      ">
+        <i data-lucide="upload-cloud" style="width:48px;height:48px;color:#9CA3AF;"></i>
+        <p style="font-size:16px;color:#6B7280;text-align:center;">
+          Glissez une image ici ou<br><strong style="color:#1A3A6B;">cliquez pour parcourir</strong>
+        </p>
+        <p style="font-size:16px;color:#9CA3AF;">JPG, PNG, WEBP · max 10 Mo</p>
+      </div>
+      <input type="file" id="fileInput" accept="image/*" style="display:none;">
+
+      <!-- Aperçu carte -->
+      <div id="cardPreview" style="display:none;margin-top:16px;text-align:center;">
+        <img id="cardImage" alt="Carte de visite" style="max-width:100%;max-height:240px;border-radius:10px;box-shadow:0 24px 48px -12px rgba(17,24,39,0.22);">
+      </div>
+
+      <button id="analyseBtn" class="btn btn-primary btn-full" style="margin-top:16px;display:none;">
+        <i data-lucide="sparkles" style="width:16px;height:16px;"></i>
+        Analyser avec Claude IA
+      </button>
+    </div>
+  </div>
+
+  <!-- Panneau droite : champs extraits -->
+  <div class="card">
+    <div class="card-header">
+      <div style="width:32px;height:32px;border-radius:8px;background:linear-gradient(135deg,#1A3A6B,#B8860B);display:flex;align-items:center;justify-content:center;">
+        <i data-lucide="sparkles" style="width:16px;height:16px;color:#fff;"></i>
+      </div>
+      <div>
+        <div class="card-title">Champs auto-remplis</div>
+        <div class="card-sub" id="iaSubtitle">En attente de l'analyse</div>
+      </div>
+      <span class="pill" id="confianceBadge" style="margin-left:auto;display:none;"></span>
+    </div>
+    <div style="padding:24px;">
+      <form method="POST" action="{{ url_for('clients.scan_enregistrer') }}" id="clientForm">
+        <input type="hidden" name="confiance_ia" id="confianceInput" value="0">
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;">
+          <div class="form-group">
+            <label class="form-label">Prénom</label>
+            <input type="text" name="prenom" id="f_prenom" class="form-input" placeholder="">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Nom</label>
+            <input type="text" name="nom" id="f_nom" class="form-input" placeholder="" required>
+          </div>
+        </div>
+        <div class="form-group" style="margin-bottom:16px;">
+          <label class="form-label">Entreprise</label>
+          <input type="text" name="entreprise" id="f_entreprise" class="form-input" placeholder="">
+        </div>
+        <div class="form-group" style="margin-bottom:16px;">
+          <label class="form-label">Fonction</label>
+          <input type="text" name="fonction" id="f_fonction" class="form-input" placeholder="">
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;">
+          <div class="form-group">
+            <label class="form-label">Email</label>
+            <input type="email" name="email" id="f_email" class="form-input" placeholder="">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Téléphone</label>
+            <input type="tel" name="telephone" id="f_telephone" class="form-input" placeholder="">
+          </div>
+        </div>
+        <div class="form-group" style="margin-bottom:24px;">
+          <label class="form-label">Adresse</label>
+          <input type="text" name="adresse" id="f_adresse" class="form-input" placeholder="">
+        </div>
+
+        <div style="display:flex;gap:12px;">
+          <button type="button" class="btn btn-ghost" onclick="resetForm()">
+            <i data-lucide="pencil" style="width:15px;height:15px;"></i> Modifier
+          </button>
+          <button type="submit" id="saveBtn" class="btn btn-primary" style="flex:1;" disabled>
+            <i data-lucide="user-plus" style="width:16px;height:16px;"></i> Enregistrer le client
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const dropZone    = document.getElementById('dropZone');
+const fileInput   = document.getElementById('fileInput');
+const analyseBtn  = document.getElementById('analyseBtn');
+const cardPreview = document.getElementById('cardPreview');
+const cardImage   = document.getElementById('cardImage');
+let imageBase64   = null;
+
+dropZone.addEventListener('click', () => fileInput.click());
+dropZone.addEventListener('dragover',  e => { e.preventDefault(); dropZone.style.borderColor = '#1A3A6B'; });
+dropZone.addEventListener('dragleave', () => { dropZone.style.borderColor = ''; });
+dropZone.addEventListener('drop', e => { e.preventDefault(); handleFile(e.dataTransfer.files[0]); });
+fileInput.addEventListener('change',   e => handleFile(e.target.files[0]));
+
+function handleFile(file) {
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    imageBase64 = e.target.result;
+    cardImage.src = imageBase64;
+    cardPreview.style.display = 'block';
+    analyseBtn.style.display  = 'flex';
+    dropZone.style.display    = 'none';
+  };
+  reader.readAsDataURL(file);
+}
+
+analyseBtn.addEventListener('click', async () => {
+  analyseBtn.disabled = true;
+  analyseBtn.textContent = 'Analyse en cours…';
+
+  try {
+    const res  = await fetch('{{ url_for("clients.scan_analyser") }}', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ image: imageBase64 }),
+    });
+    const data = await res.json();
+
+    if (data.success) {
+      const c = data.champs;
+      document.getElementById('f_nom').value        = c.nom        || '';
+      document.getElementById('f_prenom').value     = c.prenom     || '';
+      document.getElementById('f_entreprise').value = c.entreprise || '';
+      document.getElementById('f_fonction').value   = c.fonction   || '';
+      document.getElementById('f_email').value      = c.email      || '';
+      document.getElementById('f_telephone').value  = c.telephone  || '';
+      document.getElementById('f_adresse').value    = c.adresse    || '';
+      document.getElementById('confianceInput').value = data.confiance_globale || 0;
+
+      const badge = document.getElementById('confianceBadge');
+      badge.style.display = 'inline-flex';
+      badge.className     = 'pill pill-actif';
+      badge.textContent   = (data.confiance_globale || 0) + '% confiance';
+
+      document.getElementById('scanBadge').className   = 'pill pill-actif';
+      document.getElementById('scanBadge').textContent = 'Image traitée';
+
+      const nbChamps = Object.values(c).filter(v => v).length;
+      document.getElementById('iaSubtitle').textContent =
+        'Analysé par Claude AI · ' + nbChamps + ' champs détectés';
+
+      document.getElementById('saveBtn').disabled = false;
+      analyseBtn.style.display = 'none';
+    } else {
+      alert('Erreur IA : ' + (data.error || 'inconnue'));
+      analyseBtn.disabled    = false;
+      analyseBtn.textContent = 'Réessayer';
+    }
+  } catch (e) {
+    alert('Erreur réseau. Vérifiez votre connexion.');
+    analyseBtn.disabled = false;
+  }
+
+  lucide.createIcons();
+});
+
+function resetForm() {
+  ['f_nom','f_prenom','f_entreprise','f_fonction','f_email','f_telephone','f_adresse']
+    .forEach(id => { document.getElementById(id).value = ''; });
+}
+</script>
+{% endblock %}

@@ -1,0 +1,207 @@
+{% extends "layouts/base.html" %}
+{% block title %}Administration{% endblock %}
+
+{% block extra_css %}
+<style>
+.admin-section { margin-bottom: 36px; }
+.admin-section-title {
+  font-size: 16pt; font-weight: 700; color: #1A3A6B;
+  border-bottom: 2px solid #B8860B;
+  padding-bottom: 6px; margin-bottom: 16px;
+}
+
+.admin-table {
+  width: 100%; border-collapse: collapse;
+  font-size: 12pt;
+}
+.admin-table th {
+  background: #1A3A6B; color: #fff;
+  padding: 10px 14px; text-align: left;
+  font-size: 12pt; font-weight: 600;
+}
+.admin-table td {
+  padding: 10px 14px; border-bottom: 1px solid #E8EEF5;
+  color: #1A3A6B; vertical-align: middle;
+}
+.admin-table tr:hover td { background: #F9FAFB; }
+
+.badge-role {
+  display: inline-block; padding: 2px 10px;
+  border-radius: 999px; font-size: 12pt; font-weight: 600;
+}
+.badge-role.super_admin { background: #1A3A6B; color: #fff; }
+.badge-role.admin       { background: #E8EEF5; color: #1A3A6B; border: 1px solid #1A3A6B; }
+.badge-role.commercial  { background: #FEF3C7; color: #B8860B; border: 1px solid #B8860B; }
+.badge-role.comptable   { background: #D6EAE0; color: #145A32; border: 1px solid #145A32; }
+
+.badge-plan {
+  display: inline-block; padding: 2px 10px;
+  border-radius: 999px; font-size: 12pt; font-weight: 600;
+}
+.badge-plan.starter    { background: #E8EEF5; color: #1A3A6B; border: 1px solid #1A3A6B; }
+.badge-plan.pro        { background: #FEF3C7; color: #B8860B; border: 1px solid #B8860B; }
+.badge-plan.enterprise { background: #1A3A6B; color: #fff; }
+
+.badge-actif   { background: #D6EAE0; color: #145A32; border: 1px solid #145A32; display:inline-block; padding:2px 10px; border-radius:999px; font-size:12pt; font-weight:600; }
+.badge-inactif { background: #F5DDD6; color: #8B2500; border: 1px solid #8B2500; display:inline-block; padding:2px 10px; border-radius:999px; font-size:12pt; font-weight:600; }
+
+.btn-sm {
+  padding: 4px 12px; border-radius: 6px; font-size: 12pt; font-weight: 600;
+  border: none; cursor: pointer; text-decoration: none; display: inline-block;
+}
+.btn-sm.toggle-on  { background: #F5DDD6; color: #8B2500; border: 1px solid #8B2500; }
+.btn-sm.toggle-off { background: #D6EAE0; color: #145A32; border: 1px solid #145A32; }
+
+select.role-select, select.plan-select {
+  padding: 4px 8px; border-radius: 6px; font-size: 12pt;
+  border: 1px solid #1A3A6B; color: #1A3A6B;
+  background: #F9FAFB; cursor: pointer;
+}
+
+.stats-row {
+  display: flex; gap: 16px; margin-bottom: 28px; flex-wrap: wrap;
+}
+.stat-card {
+  flex: 1; min-width: 140px;
+  background: #fff; border: 2px solid #1A3A6B;
+  border-radius: 12px; padding: 16px 20px;
+  text-align: center;
+}
+.stat-card .stat-num { font-size: 28pt; font-weight: 700; color: #1A3A6B; }
+.stat-card .stat-label { font-size: 12pt; color: #B8860B; font-weight: 600; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div style="margin-bottom:24px;">
+  <h1 style="font-size:24pt;font-weight:700;color:#1A3A6B;">Administration</h1>
+  <p style="font-size:12pt;color:#1A3A6B;margin-top:4px;">Gestion des comptes entreprises et utilisateurs</p>
+</div>
+
+<!-- Stats -->
+<div class="stats-row">
+  <div class="stat-card">
+    <div class="stat-num">{{ tenants|length }}</div>
+    <div class="stat-label">Entreprises</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-num">{{ tenants|selectattr('actif')|list|length }}</div>
+    <div class="stat-label">Actives</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-num">{{ users|length }}</div>
+    <div class="stat-label">Utilisateurs</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-num">{{ users|selectattr('actif')|list|length }}</div>
+    <div class="stat-label">Actifs</div>
+  </div>
+</div>
+
+<!-- TENANTS -->
+<div class="admin-section">
+  <div class="admin-section-title">Comptes entreprises</div>
+  <table class="admin-table">
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>Entreprise</th>
+        <th>NINEA</th>
+        <th>Email</th>
+        <th>Plan</th>
+        <th>Sièges</th>
+        <th>Statut</th>
+        <th>Créé le</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for t in tenants %}
+      <tr>
+        <td>{{ t.id }}</td>
+        <td style="font-weight:600;">{{ t.nom }}</td>
+        <td>{{ t.ninea or '' }}</td>
+        <td>{{ t.email or '' }}</td>
+        <td>
+          <form method="POST" action="{{ url_for('admin.change_plan', tenant_id=t.id) }}" style="display:inline;">
+            <select name="plan" class="plan-select" onchange="this.form.submit()">
+              <option value="starter"    {% if t.plan=='starter'    %}selected{% endif %}>Starter</option>
+              <option value="pro"        {% if t.plan=='pro'        %}selected{% endif %}>Pro</option>
+              <option value="enterprise" {% if t.plan=='enterprise' %}selected{% endif %}>Enterprise</option>
+            </select>
+          </form>
+        </td>
+        <td>{{ t.nb_sieges }}</td>
+        <td>
+          {% if t.actif %}
+            <span class="badge-actif">Actif</span>
+          {% else %}
+            <span class="badge-inactif">Inactif</span>
+          {% endif %}
+        </td>
+        <td>{{ t.created_at.strftime('%d/%m/%Y') }}</td>
+        <td>
+          <a href="{{ url_for('admin.toggle_tenant', tenant_id=t.id) }}"
+             class="btn-sm {% if t.actif %}toggle-on{% else %}toggle-off{% endif %}">
+            {% if t.actif %}Désactiver{% else %}Activer{% endif %}
+          </a>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<!-- USERS -->
+<div class="admin-section">
+  <div class="admin-section-title">Utilisateurs</div>
+  <table class="admin-table">
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>Nom</th>
+        <th>Email</th>
+        <th>Entreprise</th>
+        <th>Rôle</th>
+        <th>Statut</th>
+        <th>Créé le</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for u in users %}
+      <tr>
+        <td>{{ u.id }}</td>
+        <td style="font-weight:600;">{{ u.nom_complet }}</td>
+        <td>{{ u.email }}</td>
+        <td>{{ u.tenant.nom }}</td>
+        <td>
+          <form method="POST" action="{{ url_for('admin.change_role', user_id=u.id) }}" style="display:inline;">
+            <select name="role" class="role-select" onchange="this.form.submit()">
+              <option value="super_admin" {% if u.role=='super_admin' %}selected{% endif %}>Super Admin</option>
+              <option value="admin"       {% if u.role=='admin'       %}selected{% endif %}>Admin</option>
+              <option value="commercial"  {% if u.role=='commercial'  %}selected{% endif %}>Commercial</option>
+              <option value="comptable"   {% if u.role=='comptable'   %}selected{% endif %}>Comptable</option>
+            </select>
+          </form>
+        </td>
+        <td>
+          {% if u.actif %}
+            <span class="badge-actif">Actif</span>
+          {% else %}
+            <span class="badge-inactif">Inactif</span>
+          {% endif %}
+        </td>
+        <td>{{ u.created_at.strftime('%d/%m/%Y') }}</td>
+        <td>
+          <a href="{{ url_for('admin.toggle_user', user_id=u.id) }}"
+             class="btn-sm {% if u.actif %}toggle-on{% else %}toggle-off{% endif %}">
+            {% if u.actif %}Désactiver{% else %}Activer{% endif %}
+          </a>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

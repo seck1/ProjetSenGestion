@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" fill="none">
+  
+  <defs>
+    <pattern id="wax" x="0" y="0" width="120" height="120" patternUnits="userSpaceOnUse">
+      
+      <g transform="translate(60 60)">
+        <path d="M0 -36 L26 0 L0 36 L-26 0 Z" stroke="#C2410C" stroke-width="2" fill="none"></path>
+        <path d="M0 -22 L16 0 L0 22 L-16 0 Z" stroke="#C2410C" stroke-width="1.5" fill="none"></path>
+        <circle r="6" fill="#F59E0B"></circle>
+        <circle r="2" fill="#C2410C"></circle>
+      </g>
+      
+      <g>
+        <circle cx="0" cy="0" r="14" stroke="#F59E0B" stroke-width="1.5" fill="none"></circle>
+        <circle cx="0" cy="0" r="7" stroke="#C2410C" stroke-width="1.5" fill="none"></circle>
+        <circle cx="120" cy="0" r="14" stroke="#F59E0B" stroke-width="1.5" fill="none"></circle>
+        <circle cx="120" cy="0" r="7" stroke="#C2410C" stroke-width="1.5" fill="none"></circle>
+        <circle cx="0" cy="120" r="14" stroke="#F59E0B" stroke-width="1.5" fill="none"></circle>
+        <circle cx="0" cy="120" r="7" stroke="#C2410C" stroke-width="1.5" fill="none"></circle>
+        <circle cx="120" cy="120" r="14" stroke="#F59E0B" stroke-width="1.5" fill="none"></circle>
+        <circle cx="120" cy="120" r="7" stroke="#C2410C" stroke-width="1.5" fill="none"></circle>
+      </g>
+      
+      <g fill="#C2410C">
+        <circle cx="30" cy="30" r="2"></circle>
+        <circle cx="90" cy="30" r="2"></circle>
+        <circle cx="30" cy="90" r="2"></circle>
+        <circle cx="90" cy="90" r="2"></circle>
+      </g>
+      
+      <path d="M0 60 L20 50 L40 60 L60 50 L80 60 L100 50 L120 60" stroke="#F59E0B" stroke-width="1" fill="none" opacity="0.7"></path>
+    </pattern>
+  </defs>
+  <rect width="120" height="120" fill="url(#wax)"></rect>
+</svg>

@@ -1,0 +1,310 @@
+{% extends "layouts/base.html" %}
+{% block title %}Tableau de bord{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div class="page-header-left">
+    <h1>Tableau de bord</h1>
+    <p>Bonjour {{ user_prenom }}, voici votre activité de {{ mois_label }}</p>
+  </div>
+  <div class="page-header-actions"></div>
+</div>
+
+<!-- KPIs -->
+<div class="kpi-grid">
+  <!-- CA annuel -->
+  <div class="kpi-card" style="box-shadow:0 0 0 1.5px var(--border-default),0 2px 8px rgba(26,58,107,0.08);">
+    <div class="kpi-header">
+      <div>
+        <div class="kpi-label">CA annuel {{ annee }}</div>
+        <div class="kpi-value">{{ "{:,.0f}".format(ca_annuel).replace(",", " ") }} FCFA</div>
+      </div>
+      <div class="kpi-icon" style="background:var(--color-primary-soft);">
+        <i data-lucide="trending-up" style="width:20px;height:20px;color:var(--color-primary);"></i>
+      </div>
+    </div>
+    <div class="kpi-sub {% if ca_variation and ca_variation > 0 %}up{% elif ca_variation and ca_variation < 0 %}down{% endif %}">
+      {% if ca_variation is not none %}
+        {% if ca_variation > 0 %}
+          <i data-lucide="arrow-up" style="width:14px;height:14px;"></i> +{{ ca_variation }}% vs mois dernier
+        {% elif ca_variation < 0 %}
+          <i data-lucide="arrow-down" style="width:14px;height:14px;"></i> {{ ca_variation }}% vs mois dernier
+        {% else %}
+          = Stable vs mois dernier
+        {% endif %}
+      {% else %}
+        Pas de données comparatives
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Devis signés -->
+  <div class="kpi-card" style="box-shadow:0 0 0 1.5px var(--border-default),0 2px 8px rgba(20,90,50,0.08);">
+    <div class="kpi-header">
+      <div>
+        <div class="kpi-label">Devis signés ce mois</div>
+        <div class="kpi-value">{{ devis_signes_count }}</div>
+      </div>
+      <div class="kpi-icon" style="background:var(--color-success-soft);">
+        <i data-lucide="check-circle-2" style="width:20px;height:20px;color:var(--color-success);"></i>
+      </div>
+    </div>
+    <div class="kpi-sub" style="color:var(--color-success);">
+      {{ "{:,.0f}".format(devis_signes_montant).replace(",", " ") }} FCFA encaissables
+    </div>
+  </div>
+
+  <!-- Factures -->
+  <div class="kpi-card" style="box-shadow:0 0 0 1.5px var(--border-default),0 2px 8px rgba(184,134,11,0.08);">
+    <div class="kpi-header">
+      <div>
+        <div class="kpi-label">Factures impayées</div>
+        <div class="kpi-value">{{ factures_impayees|length }} · {{ "{:,.0f}".format(montant_impaye).replace(",", " ") }} FCFA</div>
+      </div>
+      <div class="kpi-icon" style="background:var(--color-secondary-soft);">
+        <i data-lucide="receipt" style="width:20px;height:20px;color:var(--color-secondary);"></i>
+      </div>
+    </div>
+    <div class="kpi-sub" style="color:{% if factures_impayees|length > 0 %}var(--color-danger){% else %}var(--color-success){% endif %};">
+      {% if factures_impayees|length > 0 %}
+        <i data-lucide="alert-triangle" style="width:14px;height:14px;"></i> À relancer
+      {% else %}
+        Tout est à jour
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Charges du mois -->
+  <div class="kpi-card" style="box-shadow:0 0 0 1.5px var(--border-default),0 2px 8px rgba(139,37,0,0.08);">
+    <div class="kpi-header">
+      <div>
+        <div class="kpi-label">Charges du mois</div>
+        <div class="kpi-value">{{ "{:,.0f}".format(charges_mois).replace(",", " ") }} FCFA</div>
+      </div>
+      <div class="kpi-icon" style="background:var(--color-danger-soft);">
+        <i data-lucide="arrow-down-circle" style="width:20px;height:20px;color:var(--color-danger);"></i>
+      </div>
+    </div>
+    <div class="kpi-sub" style="color:var(--color-primary);">
+      {{ "{:,.0f}".format(ca_mois - charges_mois).replace(",", " ") }} FCFA de marge brute
+    </div>
+  </div>
+</div>
+
+<!-- Quick scan actions -->
+<style>
+  /* Pulse ring around the scan icon */
+  .scan-icon-wrap {
+    position: relative;
+    width: 52px; height: 52px;
+    border-radius: 12px;
+    background: var(--color-primary-soft);
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .scan-icon-wrap::before,
+  .scan-icon-wrap::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 12px;
+    border: 2px solid #1A3A6B;
+    opacity: 0;
+    animation: scan-pulse 2.4s ease-out infinite;
+  }
+  .scan-icon-wrap::after { animation-delay: 1.2s; }
+
+  @keyframes scan-pulse {
+    0%   { transform: scale(1);    opacity: 0.55; }
+    100% { transform: scale(1.75); opacity: 0; }
+  }
+
+  /* Scan line sweeping across the icon */
+  .scan-line-anim {
+    position: absolute;
+    left: 8px; right: 8px;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, #1A3A6B, transparent);
+    border-radius: 1px;
+    animation: scan-sweep 2s ease-in-out infinite;
+    top: 50%;
+  }
+  @keyframes scan-sweep {
+    0%   { transform: translateY(-14px); opacity: 0; }
+    20%  { opacity: 1; }
+    80%  { opacity: 1; }
+    100% { transform: translateY(14px);  opacity: 0; }
+  }
+
+  /* Card lift on hover */
+  .quick-action-card {
+    display: flex; align-items: center; gap: 20px;
+    padding: 20px; text-decoration: none;
+    box-shadow: 0 0 0 1.5px var(--border-default);
+    border-radius: var(--radius-card);
+    transition: box-shadow .2s, transform .2s;
+  }
+  .quick-action-card:hover {
+    transform: translateY(-3px);
+  }
+
+  /* Arrow bounce on hover */
+  .quick-action-card .arrow-icon {
+    margin-left: auto; flex-shrink: 0;
+    transition: transform .2s;
+  }
+  .quick-action-card:hover .arrow-icon {
+    transform: translateX(5px);
+  }
+</style>
+
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px;">
+
+  <!-- Business card scanner -->
+  <a id="scanCarteBtn" href="{{ url_for('contacts.index') }}#scanner"
+     class="card quick-action-card"
+     style="box-shadow:0 0 0 1.5px var(--border-default);">
+    <div class="scan-icon-wrap">
+      <div class="scan-line-anim"></div>
+      <i data-lucide="scan-line" style="width:24px;height:24px;color:var(--color-primary);position:relative;z-index:1;"></i>
+    </div>
+    <div>
+      <div style="font-size:16px;font-weight:700;color:var(--color-primary);font-family:var(--font-display);">
+        Scanner une carte de visite
+      </div>
+      <div style="font-size:13px;color:#6B7280;margin-top:2px;">
+        Créer un contact automatiquement avec l'IA
+      </div>
+    </div>
+    <i data-lucide="arrow-right" class="arrow-icon" style="width:18px;height:18px;color:#9CA3AF;"></i>
+  </a>
+
+  <!-- Invoice scanner -->
+  <a href="{{ url_for('depenses.index') }}#scanner"
+     class="card quick-action-card"
+     style="box-shadow:0 0 0 1.5px var(--border-default);">
+    <div style="width:52px;height:52px;background:var(--color-secondary-soft);border-radius:12px;
+                display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+      <i data-lucide="file-search" style="width:24px;height:24px;color:var(--color-secondary);"></i>
+    </div>
+    <div>
+      <div style="font-size:16px;font-weight:700;color:var(--color-primary);font-family:var(--font-display);">
+        Scanner une facture
+      </div>
+      <div style="font-size:13px;color:#6B7280;margin-top:2px;">
+        Enregistrer une dépense depuis un reçu photo
+      </div>
+    </div>
+    <i data-lucide="arrow-right" class="arrow-icon" style="width:18px;height:18px;color:#9CA3AF;"></i>
+  </a>
+
+</div>
+
+<!-- Dernières activités -->
+<div class="card card-p0">
+  <div class="card-header">
+    <i data-lucide="activity" style="width:18px;height:18px;color:var(--color-primary);"></i>
+    <div class="card-title">Dernières activités</div>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Client</th>
+          <th>Date</th>
+          <th>Statut</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for d in derniers_devis %}
+        <tr>
+          <td>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <div style="width:32px;height:32px;background:var(--color-primary-soft);border-radius:8px;display:flex;align-items:center;justify-content:center;">
+                <i data-lucide="file-text" style="width:16px;height:16px;color:var(--color-primary);"></i>
+              </div>
+              <span style="font-size:16px;color:var(--fg-3);">Devis</span>
+            </div>
+          </td>
+          <td>
+            <div style="font-weight:500;">{{ d.numero }}</div>
+            {% if d.objet %}<div style="font-size:16px;color:var(--fg-3);">{{ d.objet }}</div>{% endif %}
+          </td>
+          <td>{{ d.client.nom_complet if d.client else '' }}</td>
+          <td style="font-size:16px;color:var(--fg-3);font-variant-numeric:tabular-nums;">
+            {{ d.created_at.strftime('%d/%m/%Y') }}
+          </td>
+          <td>
+            {% set statut_map = {
+              'signe':    ('pill-signe',    'check-circle-2', 'Signé'),
+              'envoye':   ('pill-envoye',   'send',           'Envoyé'),
+              'ouvert':   ('pill-ouvert',   'eye',            'Ouvert'),
+              'refuse':   ('pill-refuse',   'x-circle',       'Refusé'),
+              'brouillon':('pill-brouillon','pencil-line',    'Brouillon'),
+            } %}
+            {% set cls, icon, label = statut_map.get(d.statut, ('pill-brouillon','file','—')) %}
+            <span class="pill {{ cls }}">
+              <i data-lucide="{{ icon }}" style="width:12px;height:12px;"></i>
+              {{ label }}
+            </span>
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="5" style="text-align:center;color:var(--fg-4);padding:32px;">Aucune activité récente.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  // Select elements
+  const scanBtn  = document.getElementById('scanCarteBtn');
+  const scanWrap = scanBtn.querySelector('.scan-icon-wrap');
+  const scanBar  = scanBtn.querySelector('.scan-line-anim');
+
+  // Hover — intensify: navy background, white icon and scan line
+  scanBtn.addEventListener('mouseenter', () => {
+    scanWrap.style.background = '#1A3A6B';
+    scanWrap.querySelector('i').style.color = '#fff';
+    scanBar.style.background = 'linear-gradient(90deg, transparent, #fff, transparent)';
+    scanWrap.style.animation = 'none';
+  });
+
+  // Mouse leave — restore original colors
+  scanBtn.addEventListener('mouseleave', () => {
+    scanWrap.style.background = 'var(--color-primary-soft)';
+    scanWrap.querySelector('i').style.color = 'var(--color-primary)';
+    scanBar.style.background = 'linear-gradient(90deg, transparent, #1A3A6B, transparent)';
+  });
+
+  // Click — ripple effect from cursor position
+  scanBtn.addEventListener('click', function(e) {
+    const ripple = document.createElement('span');
+    const rect   = this.getBoundingClientRect();
+    ripple.style.cssText = `
+      position:absolute; border-radius:50%;
+      width:10px; height:10px;
+      background:rgba(26,58,107,0.25);
+      left:${e.clientX - rect.left - 5}px;
+      top:${e.clientY - rect.top - 5}px;
+      transform:scale(0); pointer-events:none;
+      animation: ripple-expand .5s ease-out forwards;
+    `;
+    this.style.position = 'relative';
+    this.style.overflow = 'hidden';
+    this.appendChild(ripple);
+    setTimeout(() => ripple.remove(), 500);
+  });
+</script>
+<style>
+  @keyframes ripple-expand {
+    to { transform: scale(30); opacity: 0; }
+  }
+</style>
+{% endblock %}

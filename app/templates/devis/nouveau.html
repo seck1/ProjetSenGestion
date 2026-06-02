@@ -1,0 +1,114 @@
+{% extends "layouts/base.html" %}
+{% block title %}Nouveau devis{% endblock %}
+{% block extra_css %}
+<style>
+.form-label { font-size:16px; font-weight:600; color:var(--color-primary); display:block; margin-bottom:6px; }
+.form-input  { font-size:16px; }
+.card-title  { font-size:18px; }
+.th-label    { text-align:left; padding:8px 6px; font-size:14px; color:#6B7280; font-weight:600; text-transform:uppercase; letter-spacing:.04em; }
+.ligne-total { padding:0 8px; font-size:16px; color:var(--fg-1); font-weight:600; font-variant-numeric:tabular-nums; }
+</style>
+{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div class="page-header-left">
+    <h1>Nouveau devis</h1>
+    <p style="font-size:16px;">Créez un devis manuellement.</p>
+  </div>
+  <div class="page-header-actions">
+    <a href="{{ url_for('devis.index') }}" class="btn btn-ghost" style="font-size:16px;">Annuler</a>
+  </div>
+</div>
+
+<form method="POST">
+  <div class="grid-2-1" style="align-items:start;">
+    <div>
+      <!-- Informations générales -->
+      <div class="card" style="margin-bottom:16px;">
+        <div class="card-title" style="margin-bottom:16px;">Informations générales</div>
+
+        <div class="form-group" style="margin-bottom:16px;">
+          <label class="form-label">Client *</label>
+          <select name="client_id" class="form-input" required style="font-size:16px;">
+            <option value="">Sélectionner un client…</option>
+            {% for c in clients %}
+            <option value="{{ c.id }}">{{ c.nom_complet }}{% if c.entreprise %} · {{ c.entreprise }}{% endif %}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="form-group" style="margin-bottom:16px;">
+          <label class="form-label">Objet du devis</label>
+          <input type="text" name="objet" class="form-input" style="font-size:16px;" placeholder="Prestation de services…">
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:8px;">
+          <div class="form-group">
+            <label class="form-label">TVA (%)</label>
+            <input type="number" name="tva_pct" class="form-input" style="font-size:16px;" value="18" min="0" max="100">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Valide jusqu'au</label>
+            <input type="date" name="valide_jusqu" class="form-input" style="font-size:16px;">
+          </div>
+        </div>
+      </div>
+
+      <!-- Prestations -->
+      <div class="card">
+        <div class="card-title" style="margin-bottom:16px;">Prestations</div>
+        <table style="width:100%;margin-bottom:12px;">
+          <thead>
+            <tr>
+              <th class="th-label">Description</th>
+              <th class="th-label" style="text-align:center;width:70px;">Qté</th>
+              <th class="th-label" style="text-align:right;">Prix unit. FCFA</th>
+              <th class="th-label" style="text-align:right;">Total</th>
+            </tr>
+          </thead>
+          <tbody id="lignesBody">
+            <tr class="ligne-row">
+              <td style="padding:4px 4px 4px 0;"><input type="text" name="description[]" class="form-input" style="font-size:16px;" placeholder="Description…" required></td>
+              <td style="padding:4px;"><input type="number" name="quantite[]" class="form-input" style="font-size:16px;width:64px;text-align:center;" value="1" min="0.01" step="0.01"></td>
+              <td style="padding:4px;"><input type="number" name="prix_unitaire[]" class="form-input" style="font-size:16px;text-align:right;" placeholder="0" min="0" step="1"></td>
+              <td class="ligne-total"></td>
+            </tr>
+          </tbody>
+        </table>
+        <button type="button" onclick="ajouterLigne()" class="btn-action" style="margin-top:8px;display:inline-flex;align-items:center;gap:6px;font-size:16px;">
+          <i data-lucide="plus" style="width:14px;height:14px;"></i> Ajouter une ligne
+        </button>
+      </div>
+    </div>
+
+    <!-- Colonne droite -->
+    <div>
+      <div class="card">
+        <div class="card-title" style="margin-bottom:16px;">Notes &amp; conditions</div>
+        <textarea name="notes" class="form-input" style="height:100px;resize:vertical;padding-top:8px;font-size:16px;" placeholder="Notes internes…"></textarea>
+        <button type="submit" class="btn btn-primary btn-full btn-lg" style="margin-top:16px;font-size:16px;">
+          <i data-lucide="file-plus" style="width:16px;height:16px;"></i> Créer le devis
+        </button>
+      </div>
+    </div>
+  </div>
+</form>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function ajouterLigne() {
+  const row = document.createElement('tr');
+  row.className = 'ligne-row';
+  row.innerHTML = `
+    <td style="padding:4px 4px 4px 0;"><input type="text" name="description[]" class="form-input" style="font-size:16px;" placeholder="Description…"></td>
+    <td style="padding:4px;"><input type="number" name="quantite[]" class="form-input" style="font-size:16px;width:64px;text-align:center;" value="1" min="0.01" step="0.01"></td>
+    <td style="padding:4px;"><input type="number" name="prix_unitaire[]" class="form-input" style="font-size:16px;text-align:right;" placeholder="0" min="0" step="1"></td>
+    <td class="ligne-total" style="position:relative;">
+      <button type="button" onclick="this.closest('tr').remove()" style="border:none;background:none;cursor:pointer;color:var(--color-danger);font-size:16px;padding:4px 8px;">✕</button>
+    </td>`;
+  document.getElementById('lignesBody').appendChild(row);
+  lucide.createIcons();
+}
+</script>
+{% endblock %}

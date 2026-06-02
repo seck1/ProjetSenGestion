@@ -1,0 +1,31 @@
+{% extends "layouts/base.html" %}
+{% block title %}{{ client.nom_complet }}{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div class="page-header-left"><h1>{{ client.nom_complet }}</h1><p>{{ client.entreprise or '' }}</p></div>
+  <div class="page-header-actions">
+    <a href="{{ url_for('clients.modifier', client_id=client.id) }}" class="btn btn-secondary"><i data-lucide="pencil" style="width:16px;height:16px;"></i> Modifier</a>
+    <a href="{{ url_for('devis.nouveau') }}?client_id={{ client.id }}" class="btn btn-gold"><i data-lucide="file-plus" style="width:16px;height:16px;"></i> Nouveau devis</a>
+  </div>
+</div>
+<div class="grid-1-1">
+  <div class="card">
+    <div class="card-title" style="margin-bottom:16px;">Coordonnées</div>
+    <p><strong>Email :</strong> {{ client.email or '' }}</p>
+    <p><strong>Téléphone :</strong> {{ client.telephone or '' }}</p>
+    <p><strong>Adresse :</strong> {{ client.adresse or '' }}</p>
+    <p><strong>Fonction :</strong> {{ client.fonction or '' }}</p>
+    <p><strong>Source :</strong> {{ client.source }}</p>
+    {% if client.confiance_ia %}<p><strong>Confiance IA :</strong> {{ client.confiance_ia }}%</p>{% endif %}
+  </div>
+  <div class="card">
+    <div class="card-title" style="margin-bottom:16px;">Devis ({{ client.devis|length }})</div>
+    {% for d in client.devis %}
+    <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border-default);">
+      <a href="{{ url_for('devis.detail', devis_id=d.id) }}" style="color:var(--color-primary);font-weight:500;">{{ d.numero }}</a>
+      <span>{{ "{:,.0f}".format(d.total_ttc or 0).replace(",", " ") }} FCFA</span>
+    </div>
+    {% else %}<p style="color:#9CA3AF;">Aucun devis.</p>{% endfor %}
+  </div>
+</div>
+{% endblock %}

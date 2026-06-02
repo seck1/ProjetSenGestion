@@ -1,0 +1,199 @@
+{% extends "layouts/base.html" %}
+{% block title %}Modifier — {{ c.nom_complet }}{% endblock %}
+{% block content %}
+
+<div class="page-header">
+  <div class="page-header-left">
+    <a href="{{ url_for('contacts.detail', contact_id=c.id) }}" style="color:var(--fg-3);text-decoration:none;font-size:16px;display:flex;align-items:center;gap:6px;margin-bottom:8px;">
+      <i data-lucide="arrow-left" style="width:16px;height:16px;"></i> {{ c.nom_complet }}
+    </a>
+    <h1>Modifier le contact</h1>
+  </div>
+</div>
+
+<div style="display:grid;grid-template-columns:minmax(0,1fr) 360px;gap:28px;align-items:start;width:95%;">
+
+  <!-- Formulaire -->
+  <form id="editForm" method="POST" action="{{ url_for('contacts.modifier', contact_id=c.id) }}">
+    <div class="card" style="margin-bottom:20px;">
+      <div class="card-title" style="margin-bottom:20px;">Identité</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;">
+        <div class="form-group">
+          <label class="form-label">Prénom</label>
+          <input type="text" name="prenom" id="f_prenom" class="form-input" value="{{ c.prenom or '' }}">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Nom <span style="color:var(--color-secondary);">*</span></label>
+          <input type="text" name="nom" id="f_nom" class="form-input" value="{{ c.nom }}" required>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+        <div class="form-group">
+          <label class="form-label">Entreprise</label>
+          <input type="text" name="entreprise" id="f_entreprise" class="form-input" value="{{ c.entreprise or '' }}">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Fonction / Titre</label>
+          <input type="text" name="fonction" id="f_fonction" class="form-input" value="{{ c.fonction or '' }}">
+        </div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-bottom:20px;">
+      <div class="card-title" style="margin-bottom:20px;">Coordonnées</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;">
+        <div class="form-group">
+          <label class="form-label">Téléphone</label>
+          <input type="tel" name="telephone" id="f_telephone" class="form-input" value="{{ c.telephone or '' }}">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Email</label>
+          <input type="email" name="email" id="f_email" class="form-input" value="{{ c.email or '' }}">
+        </div>
+      </div>
+      <div class="form-group" style="margin-bottom:16px;">
+        <label class="form-label">Adresse</label>
+        <input type="text" name="adresse" id="f_adresse" class="form-input" value="{{ c.adresse or '' }}">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Site web</label>
+        <input type="text" name="site_web" id="f_site_web" class="form-input" value="{{ c.site_web or '' }}" placeholder="www.entreprise.com">
+      </div>
+    </div>
+
+    <div class="card" style="margin-bottom:20px;">
+      <div class="card-title" style="margin-bottom:20px;">Contexte</div>
+      <div class="form-group" style="margin-bottom:16px;">
+        <label class="form-label">Événement / Salon</label>
+        <input type="text" name="evenement" id="f_evenement" class="form-input" value="{{ c.evenement or '' }}" placeholder="ex : Forum PME Dakar 2026">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Notes</label>
+        <textarea name="notes" id="f_notes" class="form-input" rows="4" style="height:auto;resize:vertical;">{{ c.notes or '' }}</textarea>
+      </div>
+    </div>
+
+    <div style="display:flex;gap:12px;align-items:center;">
+      <a href="{{ url_for('contacts.detail', contact_id=c.id) }}" class="btn btn-secondary">Annuler</a>
+      <button type="submit" class="btn btn-primary" style="flex:1;">
+        <i data-lucide="save" style="width:16px;height:16px;"></i> Enregistrer les modifications
+      </button>
+    </div>
+  </form>
+
+  <!-- Colonne droite -->
+  <div style="position:sticky;top:88px;display:flex;flex-direction:column;gap:16px;">
+
+    <!-- Label aperçu -->
+    <div style="font-size:16px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--fg-4);">Aperçu</div>
+
+    <!-- Carte de visite -->
+    <div style="background:#fff;border-radius:16px;overflow:hidden;box-shadow:var(--shadow-md);">
+      <div style="background:#1A3A6B;padding:24px 20px 28px;text-align:center;overflow:hidden;">
+        <div id="prev_avatar" style="width:64px;height:64px;border-radius:50%;border:3px solid rgba(255,255,255,0.4);background:rgba(255,255,255,0.15);display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:700;color:#fff;margin:0 auto 12px;">{{ c.initiales }}</div>
+        <div id="prev_nom" style="font-size:16px;font-weight:700;color:#fff;margin-bottom:4px;word-break:break-word;">{{ c.nom_complet }}</div>
+        <div id="prev_fonction" style="font-size:16px;color:rgba(255,255,255,0.70);margin-bottom:5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ c.fonction or '' }}</div>
+        <div id="prev_entreprise" style="font-size:16px;font-weight:700;color:#B8860B;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ c.entreprise or '' }}</div>
+      </div>
+      <div style="height:3px;background:linear-gradient(90deg,transparent,#B8860B 40%,#D4A017 50%,#B8860B 60%,transparent);"></div>
+      <div style="padding:14px 16px 8px;">
+        <div id="prev_tel" style="display:{{ 'flex' if c.telephone else 'none' }};align-items:center;gap:10px;margin-bottom:10px;">
+          <div style="width:28px;height:28px;border-radius:7px;background:var(--color-primary-soft);display:flex;align-items:center;justify-content:center;color:var(--color-primary);flex-shrink:0;">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.81a19.79 19.79 0 01-3.07-8.72A2 2 0 012 1h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.09 8.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/></svg>
+          </div>
+          <span id="prev_tel_val" style="font-size:16px;color:var(--fg-1);">{{ c.telephone or '' }}</span>
+        </div>
+        <div id="prev_email" style="display:{{ 'flex' if c.email else 'none' }};align-items:center;gap:10px;margin-bottom:10px;">
+          <div style="width:28px;height:28px;border-radius:7px;background:var(--color-primary-soft);display:flex;align-items:center;justify-content:center;color:var(--color-primary);flex-shrink:0;">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
+          </div>
+          <span id="prev_email_val" style="font-size:16px;color:var(--color-primary);word-break:break-all;">{{ c.email or '' }}</span>
+        </div>
+        <div id="prev_adr" style="display:{{ 'flex' if c.adresse else 'none' }};align-items:flex-start;gap:10px;margin-bottom:10px;">
+          <div style="width:28px;height:28px;border-radius:7px;background:var(--color-primary-soft);display:flex;align-items:center;justify-content:center;color:var(--color-primary);flex-shrink:0;">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+          </div>
+          <span id="prev_adr_val" style="font-size:16px;color:var(--fg-2);line-height:1.4;">{{ c.adresse or '' }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Informations -->
+    <div style="background:#fff;border-radius:16px;border:1px solid var(--border-default);padding:16px;box-shadow:var(--shadow-sm);">
+      <div style="font-size:16px;font-weight:700;color:var(--fg-2);margin-bottom:12px;">Informations</div>
+      <div style="display:flex;flex-direction:column;gap:10px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <span style="font-size:16px;color:var(--fg-3);">Source</span>
+          <span style="font-size:16px;font-weight:600;color:var(--fg-1);">
+            {% if c.source == 'scan_carte' %}Scan carte IA
+            {% elif c.source == 'qrcode' %}QR Code
+            {% else %}Manuel{% endif %}
+          </span>
+        </div>
+        {% if c.confiance_ia %}
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <span style="font-size:16px;color:var(--fg-3);">Confiance IA</span>
+          <span style="font-size:16px;font-weight:600;color:var(--color-primary);">{{ c.confiance_ia }}%</span>
+        </div>
+        {% endif %}
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <span style="font-size:16px;color:var(--fg-3);">Ajouté le</span>
+          <span style="font-size:16px;font-weight:600;color:var(--fg-1);">{{ c.created_at.strftime('%d/%m/%Y') }}</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <span style="font-size:16px;color:var(--fg-3);">Statut</span>
+          <span style="font-size:16px;font-weight:600;color:{% if c.est_converti %}var(--color-secondary){% else %}var(--fg-1){% endif %};">
+            {{ 'Client ✓' if c.est_converti else 'Contact' }}
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Conseil -->
+    <div style="background:var(--color-primary-soft);border-radius:16px;padding:16px;border:1px solid rgba(26,58,107,0.12);box-shadow:var(--shadow-sm);">
+      <div style="font-size:16px;font-weight:700;color:var(--color-primary);margin-bottom:8px;">Conseil</div>
+      <p style="font-size:16px;color:var(--color-primary);line-height:1.6;margin:0;">Complétez l'adresse et le site web pour enrichir la vCard exportable et améliorer le suivi commercial.</p>
+    </div>
+
+  </div>
+
+</div>
+
+<script>
+function updateNom() {
+  const p = document.getElementById('f_prenom').value.trim();
+  const n = document.getElementById('f_nom').value.trim();
+  document.getElementById('prev_nom').textContent = (p + ' ' + n).trim();
+  const av = (p[0] || '') + (n[0] || '');
+  document.getElementById('prev_avatar').textContent = av.toUpperCase();
+}
+document.getElementById('f_prenom').addEventListener('input', updateNom);
+document.getElementById('f_nom').addEventListener('input', updateNom);
+
+document.getElementById('f_fonction').addEventListener('input', function() {
+  document.getElementById('prev_fonction').textContent = this.value;
+});
+document.getElementById('f_entreprise').addEventListener('input', function() {
+  document.getElementById('prev_entreprise').textContent = this.value;
+});
+document.getElementById('f_telephone').addEventListener('input', function() {
+  const row = document.getElementById('prev_tel');
+  const val = document.getElementById('prev_tel_val');
+  row.style.display = this.value.trim() ? 'flex' : 'none';
+  val.textContent = this.value;
+});
+document.getElementById('f_email').addEventListener('input', function() {
+  const row = document.getElementById('prev_email');
+  const val = document.getElementById('prev_email_val');
+  row.style.display = this.value.trim() ? 'flex' : 'none';
+  val.textContent = this.value;
+});
+document.getElementById('f_adresse').addEventListener('input', function() {
+  const row = document.getElementById('prev_adr');
+  const val = document.getElementById('prev_adr_val');
+  row.style.display = this.value.trim() ? 'flex' : 'none';
+  val.textContent = this.value;
+});
+</script>
+
+{% endblock %}

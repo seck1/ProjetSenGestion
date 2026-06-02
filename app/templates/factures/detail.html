@@ -1,0 +1,72 @@
+{% extends "layouts/base.html" %}
+{% block title %}{{ facture.numero }}{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div class="page-header-left">
+    <h1>{{ facture.numero }}</h1>
+    <p>{{ facture.client.nom_complet if facture.client else '' }}</p>
+  </div>
+  <div class="page-header-actions">
+    <a href="{{ url_for('factures.telecharger_pdf', facture_id=facture.id) }}" class="btn btn-secondary" target="_blank">
+      <i data-lucide="download" style="width:16px;height:16px;"></i> PDF
+    </a>
+    {% if facture.statut != 'payee' %}
+    <form method="POST" action="{{ url_for('factures.marquer_payee', facture_id=facture.id) }}" style="display:inline;">
+      <button type="submit" class="btn btn-gold">
+        <i data-lucide="check-circle-2" style="width:16px;height:16px;"></i> Marquer payée
+      </button>
+    </form>
+    {% endif %}
+  </div>
+</div>
+
+<div class="card">
+  <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px;">
+    <div>
+      <div style="font-size:32px;font-weight:700;font-family:var(--font-display);color:#1A3A6B;">FACTURE</div>
+      <div style="font-size:16px;color:#6B7280;">N° {{ facture.numero }} · {{ facture.created_at.strftime('%d %B %Y') }}</div>
+    </div>
+    {% set statut_map = {'envoyee':('pill-envoye','send','Envoyée'),'payee':('pill-signe','check-circle-2','Payée'),'en_retard':('pill-refuse','alert-triangle','En retard'),'brouillon':('pill-brouillon','pencil-line','Brouillon')} %}
+    {% set cls, icon, label = statut_map.get(facture.statut, ('pill-brouillon','file','—')) %}
+    <span class="pill {{ cls }}" style="font-size:16px;height:26px;padding:0 12px;">
+      <i data-lucide="{{ icon }}" style="width:16px;height:16px;"></i> {{ label }}
+    </span>
+  </div>
+
+  <table style="width:100%;margin-bottom:16px;">
+    <thead>
+      <tr style="background:#F9FAFB;">
+        <th style="padding:10px 12px;text-align:left;font-size:16px;color:#6B7280;text-transform:uppercase;">Description</th>
+        <th style="padding:10px 8px;text-align:right;font-size:16px;color:#6B7280;text-transform:uppercase;">Qté</th>
+        <th style="padding:10px 8px;text-align:right;font-size:16px;color:#6B7280;text-transform:uppercase;">Prix unit.</th>
+        <th style="padding:10px 12px;text-align:right;font-size:16px;color:#6B7280;text-transform:uppercase;">Total</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for l in facture.lignes %}
+      <tr style="border-bottom:1px solid #E5E7EB;">
+        <td style="padding:10px 12px;font-size:16px;">{{ l.description }}</td>
+        <td style="padding:10px 8px;text-align:right;font-size:16px;">{{ l.quantite }}</td>
+        <td style="padding:10px 8px;text-align:right;font-size:16px;font-variant-numeric:tabular-nums;">{{ "{:,.0f}".format(l.prix_unitaire or 0).replace(",", " ") }}</td>
+        <td style="padding:10px 12px;text-align:right;font-size:16px;font-weight:600;font-variant-numeric:tabular-nums;">{{ "{:,.0f}".format(l.total or 0).replace(",", " ") }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;padding-top:12px;border-top:1px solid #E5E7EB;">
+    <div style="display:flex;gap:48px;font-size:16px;">
+      <span style="color:#6B7280;">Total HT</span>
+      <span>{{ "{:,.0f}".format(facture.total_ht or 0).replace(",", " ") }} FCFA</span>
+    </div>
+    <div style="display:flex;gap:48px;font-size:16px;">
+      <span style="color:#6B7280;">TVA ({{ facture.tva_pct }}%)</span>
+      <span>{{ "{:,.0f}".format(facture.total_tva or 0).replace(",", " ") }} FCFA</span>
+    </div>
+    <div style="display:flex;gap:48px;font-size:16px;font-weight:700;color:#1A3A6B;border-top:2px solid #B8860B;padding-top:8px;margin-top:4px;">
+      <span>Total TTC</span>
+      <span>{{ "{:,.0f}".format(facture.total_ttc or 0).replace(",", " ") }} FCFA</span>
+    </div>
+  </div>
+</div>
+{% endblock %}

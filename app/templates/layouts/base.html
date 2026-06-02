@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}SenGestion{% endblock %} — SenGestion</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/tokens.css') }}?v=5">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}?v=5">
+  {% block extra_css %}{% endblock %}
+  <script src="https://unpkg.com/lucide@1.17.0/dist/umd/lucide.min.js"></script>
+</head>
+<body>
+
+<div class="app-layout">
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <img src="{{ url_for('static', filename='img/logo-tight.png') }}" alt="SenGestion">
+    </div>
+
+    <nav class="sidebar-nav">
+      {% if current_user.role == 'super_admin' %}
+        <a href="{{ url_for('admin.index') }}"
+           class="nav-item {% if request.endpoint and request.endpoint.startswith('admin') %}active{% endif %}">
+          <i data-lucide="shield" style="width:18px;height:18px;"></i>
+          Administration
+        </a>
+        <a href="{{ url_for('settings.index') }}"
+           class="nav-item {% if request.endpoint and request.endpoint.startswith('settings') %}active{% endif %}">
+          <i data-lucide="settings" style="width:18px;height:18px;"></i>
+          Paramètres
+        </a>
+      {% else %}
+        {% set nav = [
+          ('dashboard.index',     'layout-dashboard',   'Tableau de bord', none),
+          ('clients.index',       'users',              'Clients',         none),
+          ('contacts.index',      'contact-2',          'Contacts',        none),
+          ('fournisseurs.index',  'building-2',         'Fournisseurs',    none),
+          ('devis.index',         'file-text',          'Devis',           none),
+          ('factures.index',      'receipt',            'Factures',        none),
+          ('depenses.index',      'wallet',             'Charges',         none),
+          ('rapports.index',      'bar-chart-3',        'Rapports',        none),
+          ('settings.index',      'settings',           'Paramètres',      none),
+        ] %}
+        {% for endpoint, icon, label, badge in nav %}
+        <a href="{{ url_for(endpoint) }}"
+           class="nav-item {% if request.endpoint and request.endpoint.startswith(endpoint.split('.')[0]) %}active{% endif %}">
+          <i data-lucide="{{ icon }}" style="width:18px;height:18px;"></i>
+          {{ label }}
+          {% if badge %}<span class="nav-badge">{{ badge }}</span>{% endif %}
+        </a>
+        {% endfor %}
+      {% endif %}
+    </nav>
+
+    <div class="sidebar-footer">
+      <a href="{{ url_for('auth.logout') }}" class="btn-logout">
+        <i data-lucide="log-out" style="width:14px;height:14px;"></i> Déconnecter
+      </a>
+    </div>
+  </aside>
+
+  <!-- Header -->
+  <header class="header">
+    <div class="header-tenant">
+      <div class="header-tenant-name">{{ current_user.tenant.nom }}</div>
+    </div>
+
+  </header>
+
+  <!-- Main -->
+  <main class="main-content">
+    <div class="main-inner">
+      <!-- Flash messages -->
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% for category, message in messages %}
+          <div class="flash flash-{{ category }}">{{ message }}</div>
+        {% endfor %}
+      {% endwith %}
+
+      {% block content %}{% endblock %}
+    </div>
+  </main>
+</div>
+
+<!-- Toast container -->
+<div class="toast-container" id="toastContainer"></div>
+
+<script>
+  lucide.createIcons();
+
+  function showToast(message, type = 'default') {
+    const container = document.getElementById('toastContainer');
+    const toast = document.createElement('div');
+    toast.className = `toast ${type}`;
+    toast.textContent = message;
+    container.appendChild(toast);
+    setTimeout(() => toast.remove(), 4000);
+  }
+</script>
+{% block extra_js %}{% endblock %}
+</body>
+</html>

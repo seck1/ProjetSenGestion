@@ -1,0 +1,268 @@
+{% extends "layouts/base.html" %}
+{% block title %}Nouveau devis par réunion audio{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div class="page-header-left">
+    <h1>Nouveau devis par réunion audio</h1>
+    <p>Enregistrez la réunion — Whisper transcrit, Claude analyse et génère le devis.</p>
+  </div>
+  <div class="page-header-actions">
+    <a href="{{ url_for('devis.index') }}" class="btn btn-ghost">Annuler</a>
+  </div>
+</div>
+
+<div class="card" style="margin-bottom:16px;">
+  <div style="display:flex;align-items:center;gap:16px;">
+    <label class="form-label" style="margin:0;white-space:nowrap;">Client de la réunion :</label>
+    <select id="clientSelect" class="form-input" style="max-width:320px;">
+      <option value="">Sélectionner un client…</option>
+      {% for c in clients %}
+      <option value="{{ c.id }}">{{ c.nom_complet }} — {{ c.entreprise or '' }}</option>
+      {% endfor %}
+    </select>
+  </div>
+</div>
+
+<div class="grid-1-1">
+  <div style="display:flex;flex-direction:column;gap:16px;">
+    <div class="card" style="text-align:center;padding:36px;">
+      <div id="recordingBadge" style="display:none;margin-bottom:16px;">
+        <span class="pill pill-refuse" style="font-size:16px;height:28px;padding:0 14px;">
+          <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#EF4444;margin-right:6px;"></span>
+          Enregistrement en cours
+        </span>
+      </div>
+      <div style="position:relative;display:inline-flex;align-items:center;justify-content:center;width:112px;height:112px;margin-bottom:16px;">
+        <div style="position:relative;width:80px;height:80px;border-radius:50%;background:#EF4444;display:flex;align-items:center;justify-content:center;">
+          <i data-lucide="mic" style="width:36px;height:36px;color:#fff;"></i>
+        </div>
+      </div>
+      <div id="timer" style="font-family:var(--font-display);font-size:48px;font-weight:700;color:#1A3A6B;line-height:1;margin-bottom:8px;">00:00</div>
+      <div style="font-size:16px;color:#6B7280;margin-bottom:24px;">Cliquez sur Démarrer pour enregistrer la réunion</div>
+      <div style="display:flex;gap:10px;justify-content:center;">
+        <button id="startBtn" class="btn btn-primary btn-lg">
+          <i data-lucide="mic" style="width:18px;height:18px;"></i> Démarrer
+        </button>
+        <button id="stopBtn" class="btn btn-danger btn-lg" style="display:none;">
+          <i data-lucide="square" style="width:18px;height:18px;"></i> Terminer
+        </button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <i data-lucide="file-text" style="width:18px;height:18px;color:#1A3A6B;"></i>
+        <div class="card-title">Transcription</div>
+        <span class="pill pill-envoye" id="whisperBadge" style="margin-left:auto;display:none;">
+          <i data-lucide="loader" style="width:11px;height:11px;"></i> Whisper
+        </span>
+      </div>
+      <div style="padding:16px;">
+        <textarea id="transcriptionArea" class="form-input" style="height:180px;resize:vertical;padding-top:10px;font-size:16px;" placeholder="La transcription apparaîtra ici après l'enregistrement…" readonly></textarea>
+        <button id="analyseBtn" class="btn btn-primary btn-full" style="margin-top:12px;display:none;">
+          <i data-lucide="sparkles" style="width:16px;height:16px;"></i> Analyser avec Claude IA
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <div style="width:32px;height:32px;border-radius:8px;background:linear-gradient(135deg,#1A3A6B,#B8860B);display:flex;align-items:center;justify-content:center;">
+        <i data-lucide="sparkles" style="width:16px;height:16px;color:#fff;"></i>
+      </div>
+      <div>
+        <div class="card-title">Analyse par Claude AI</div>
+        <div class="card-sub">Extraction des informations</div>
+      </div>
+    </div>
+
+    <div id="analyseResult" style="padding:16px;">
+      <div id="analysePlaceholder" style="color:#9CA3AF;text-align:center;padding:32px;">
+        <i data-lucide="sparkles" style="width:32px;height:32px;color:#E5E7EB;"></i>
+        <p style="margin-top:8px;font-size:16px;">L'analyse apparaîtra après la transcription.</p>
+      </div>
+      <!-- Les résultats sont insérés via DOM safe methods -->
+      <div id="besoinsSection" style="display:none;margin-bottom:16px;">
+        <div style="font-size:16px;font-weight:600;text-transform:uppercase;color:#6B7280;margin-bottom:8px;">Besoins détectés</div>
+        <ul id="besoinsList" style="list-style:none;padding:0;"></ul>
+      </div>
+      <div id="prestationsSection" style="display:none;margin-bottom:16px;">
+        <div style="font-size:16px;font-weight:600;text-transform:uppercase;color:#6B7280;margin-bottom:8px;">Prestations détectées</div>
+        <div id="prestationsList"></div>
+      </div>
+      <div id="budgetSection" style="display:none;padding:14px;background:#E8EEF5;border-radius:8px;margin-bottom:16px;">
+        <div style="font-size:16px;font-weight:600;text-transform:uppercase;color:#1A3A6B;margin-bottom:4px;">Budget évoqué</div>
+        <div id="budgetText" style="font-size:16px;color:#374151;"></div>
+      </div>
+    </div>
+
+    <div id="generateSection" style="padding:16px;display:none;">
+      <button id="generateBtn" class="btn btn-gold btn-full btn-lg">
+        <i data-lucide="file-plus" style="width:18px;height:18px;"></i>
+        Générer le devis depuis l'analyse
+      </button>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let mediaRecorder, audioChunks = [], timerInterval, seconds = 0;
+let transcriptionText = '', analyseData = null;
+
+const startBtn     = document.getElementById('startBtn');
+const stopBtn      = document.getElementById('stopBtn');
+const timerEl      = document.getElementById('timer');
+const badge        = document.getElementById('recordingBadge');
+const whisperBadge = document.getElementById('whisperBadge');
+const txArea       = document.getElementById('transcriptionArea');
+const analyseBtn   = document.getElementById('analyseBtn');
+const genSection   = document.getElementById('generateSection');
+const genBtn       = document.getElementById('generateBtn');
+
+startBtn.addEventListener('click', async () => {
+  const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+  mediaRecorder  = new MediaRecorder(stream);
+  audioChunks    = [];
+  mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
+  mediaRecorder.start();
+  startBtn.style.display = 'none';
+  stopBtn.style.display  = 'flex';
+  badge.style.display    = 'block';
+  seconds = 0;
+  timerInterval = setInterval(() => {
+    seconds++;
+    const m = String(Math.floor(seconds / 60)).padStart(2, '0');
+    const s = String(seconds % 60).padStart(2, '0');
+    timerEl.textContent = m + ':' + s;
+  }, 1000);
+});
+
+stopBtn.addEventListener('click', () => {
+  mediaRecorder.stop();
+  clearInterval(timerInterval);
+  stopBtn.style.display  = 'none';
+  startBtn.style.display = 'flex';
+  badge.style.display    = 'none';
+
+  mediaRecorder.onstop = async () => {
+    const blob     = new Blob(audioChunks, { type: 'audio/webm' });
+    const formData = new FormData();
+    formData.append('audio', blob, 'reunion.webm');
+    whisperBadge.style.display = 'inline-flex';
+    txArea.placeholder = 'Transcription en cours (Whisper)…';
+
+    const res  = await fetch('{{ url_for("devis.reunion_transcrire") }}', { method: 'POST', body: formData });
+    const data = await res.json();
+    whisperBadge.style.display = 'none';
+
+    if (data.success) {
+      transcriptionText = data.texte;
+      txArea.value = transcriptionText;
+      txArea.removeAttribute('readonly');
+      analyseBtn.style.display = 'flex';
+    } else {
+      txArea.placeholder = 'Erreur : ' + (data.error || 'transcription échouée');
+    }
+    lucide.createIcons();
+  };
+});
+
+analyseBtn.addEventListener('click', async () => {
+  analyseBtn.disabled     = true;
+  analyseBtn.textContent  = 'Analyse Claude en cours…';
+
+  const res  = await fetch('{{ url_for("devis.reunion_analyser") }}', {
+    method:  'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body:    JSON.stringify({ transcription: txArea.value }),
+  });
+  const data = await res.json();
+
+  if (data.success) {
+    analyseData = data;
+    afficherAnalyse(data);
+    genSection.style.display = 'block';
+  } else {
+    analyseBtn.disabled    = false;
+    analyseBtn.textContent = 'Réessayer';
+  }
+  lucide.createIcons();
+});
+
+function afficherAnalyse(data) {
+  document.getElementById('analysePlaceholder').style.display = 'none';
+
+  if (data.besoins && data.besoins.length) {
+    const section = document.getElementById('besoinsSection');
+    const list    = document.getElementById('besoinsList');
+    section.style.display = 'block';
+    list.innerHTML = '';
+    data.besoins.forEach(b => {
+      const li   = document.createElement('li');
+      li.style.cssText = 'display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid #F3F4F6;font-size:16px;';
+      const icon = document.createElement('i');
+      icon.setAttribute('data-lucide', 'check-circle-2');
+      icon.style.cssText = 'width:14px;height:14px;color:#10B981;flex-shrink:0;';
+      const txt  = document.createTextNode(b);
+      li.appendChild(icon);
+      li.appendChild(txt);
+      list.appendChild(li);
+    });
+  }
+
+  if (data.prestations && data.prestations.length) {
+    const section = document.getElementById('prestationsSection');
+    const list    = document.getElementById('prestationsList');
+    section.style.display = 'block';
+    list.innerHTML = '';
+    data.prestations.forEach(p => {
+      const div   = document.createElement('div');
+      div.style.cssText = 'padding:8px 10px;background:#F9FAFB;border-radius:6px;margin-bottom:6px;font-size:16px;';
+      const title = document.createElement('div');
+      title.style.fontWeight = '500';
+      title.textContent = p.description || '';
+      const sub   = document.createElement('div');
+      sub.style.cssText = 'color:#6B7280;font-size:16px;';
+      const montant = Math.round(p.prix_estime || 0).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+      sub.textContent = (p.quantite || 1) + ' × ' + montant + ' FCFA';
+      div.appendChild(title);
+      div.appendChild(sub);
+      list.appendChild(div);
+    });
+  }
+
+  if (data.budget && data.budget.texte_original) {
+    const section = document.getElementById('budgetSection');
+    const txt     = document.getElementById('budgetText');
+    section.style.display = 'block';
+    txt.textContent = data.budget.texte_original;
+  }
+}
+
+genBtn.addEventListener('click', async () => {
+  const clientId = document.getElementById('clientSelect').value;
+  if (!clientId) { alert('Sélectionnez un client.'); return; }
+  if (!analyseData) return;
+  genBtn.disabled    = true;
+  genBtn.textContent = 'Génération en cours…';
+
+  const res  = await fetch('{{ url_for("devis.reunion_generer") }}', {
+    method:  'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body:    JSON.stringify({ client_id: clientId, transcription: txArea.value, analyse: analyseData }),
+  });
+  const data = await res.json();
+
+  if (data.success) {
+    window.location.href = '/devis/' + data.devis_id;
+  } else {
+    genBtn.disabled    = false;
+    genBtn.textContent = 'Réessayer';
+    alert('Erreur : ' + (data.error || 'inconnue'));
+  }
+});
+</script>
+{% endblock %}

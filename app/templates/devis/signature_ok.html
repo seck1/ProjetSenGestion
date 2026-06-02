@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Devis signé — SenGestion</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    html, body {
+      margin: 0; padding: 0; height: 100%;
+      font-family: Arial, Helvetica, sans-serif;
+      background: #F9FAFB; color: #1A3A6B;
+      display: flex; flex-direction: column;
+    }
+    .header { background: #1A3A6B; padding: 18px 40px; }
+    .header-logo { color: #fff; font-family: Georgia, serif; font-size: 22px; font-weight: 700; }
+    .header-sub  { color: #B8860B; font-size: 16px; letter-spacing: 1px; }
+    .center {
+      flex: 1; display: flex; align-items: center; justify-content: center; padding: 40px 16px;
+    }
+    .card {
+      background: #fff; border-radius: 16px; border: 2px solid #145A32;
+      box-shadow: 0 8px 40px rgba(20,90,50,0.10);
+      padding: 56px 48px; max-width: 520px; width: 100%; text-align: center;
+    }
+    .check-circle {
+      width: 80px; height: 80px; border-radius: 50%;
+      background: #D6EAE0; display: flex; align-items: center; justify-content: center;
+      margin: 0 auto 24px;
+    }
+    .title { font-family: Georgia, serif; font-size: 28px; font-weight: 700; color: #145A32; margin: 0 0 10px; }
+    .sub   { font-size: 17px; color: #5A6A80; margin: 0 0 28px; line-height: 1.5; }
+    .info-box {
+      background: #F9FAFB; border: 1px solid #E5E7EB; border-radius: 10px;
+      padding: 18px 20px; text-align: left; margin-bottom: 24px;
+    }
+    .info-row { display: flex; justify-content: space-between; font-size: 16px; padding: 6px 0; }
+    .info-row .lbl { color: #6B7280; }
+    .info-row .val { font-weight: 600; color: #1A3A6B; }
+    .footer-note { font-size: 16px; color: #9CA3AF; margin-top: 20px; }
+  </style>
+</head>
+<body>
+<div class="header">
+  <div class="header-logo">SenGestion</div>
+  <div class="header-sub">GESTION INTELLIGENTE POUR LES PME</div>
+</div>
+
+<div class="center">
+  <div class="card">
+    <div class="check-circle">
+      <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#145A32" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M20 6 9 17l-5-5"/>
+      </svg>
+    </div>
+    <h1 class="title">Devis signé !</h1>
+    <p class="sub">Votre signature a bien été enregistrée. Merci pour votre confiance.</p>
+
+    <div class="info-box">
+      <div class="info-row"><span class="lbl">Devis</span><span class="val">{{ devis.numero }}</span></div>
+      <div class="info-row"><span class="lbl">Signé par</span><span class="val">{{ devis.signature_nom or '' }}</span></div>
+      {% if devis.signe_at %}
+      <div class="info-row"><span class="lbl">Date</span><span class="val">{{ devis.signe_at.strftime('%d %B %Y à %H:%M') }}</span></div>
+      {% endif %}
+      <div class="info-row"><span class="lbl">Montant TTC</span><span class="val">{{ "{:,.0f}".format(devis.total_ttc or 0).replace(",", " ") }} FCFA</span></div>
+    </div>
+
+    <p style="font-size:16px;color:#5A6A80;margin:0;">
+      Un email de confirmation vous a été envoyé. Notre équipe vous contactera prochainement.
+    </p>
+    <p class="footer-note">SenGestion — Gestion intelligente pour les PME sénégalaises</p>
+  </div>
+</div>
+</body>
+</html>

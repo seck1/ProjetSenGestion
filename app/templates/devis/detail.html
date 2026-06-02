@@ -1,0 +1,183 @@
+{% extends "layouts/base.html" %}
+{% block title %}{{ devis.numero }}{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div class="page-header-left">
+    <h1>{{ devis.numero }}</h1>
+    <p>{{ devis.client.nom_complet if devis.client else '' }} · {{ devis.client.entreprise or '' if devis.client else '' }}</p>
+  </div>
+  <div class="page-header-actions">
+    <a href="{{ url_for('devis.telecharger_pdf', devis_id=devis.id) }}" class="btn btn-secondary">
+      <i data-lucide="download" style="width:16px;height:16px;"></i> PDF
+    </a>
+    {% if devis.statut == 'brouillon' %}
+    <form method="POST" action="{{ url_for('devis.envoyer', devis_id=devis.id) }}" style="display:inline;">
+      <button type="submit" class="btn btn-primary">
+        <i data-lucide="send" style="width:16px;height:16px;"></i> Envoyer au client
+      </button>
+    </form>
+    {% endif %}
+    {% if devis.statut in ['envoye', 'ouvert'] %}
+    <form method="POST" action="{{ url_for('devis.envoyer_signature', devis_id=devis.id) }}" style="display:inline;">
+      <button type="submit" class="btn btn-gold">
+        <i data-lucide="pen-tool" style="width:16px;height:16px;"></i> Envoyer pour signature
+      </button>
+    </form>
+    {% endif %}
+    {% if devis.statut == 'signe' %}
+    <form method="POST" action="{{ url_for('factures.depuis_devis', devis_id=devis.id) }}" style="display:inline;">
+      <button type="submit" class="btn btn-gold">
+        <i data-lucide="receipt" style="width:16px;height:16px;"></i> Convertir en facture
+      </button>
+    </form>
+    {% endif %}
+  </div>
+</div>
+
+<div class="grid-2-1" style="align-items:start;">
+  <!-- Aperçu devis style A4 -->
+  <div class="card">
+    <div style="padding:8px 0 20px;border-bottom:1px solid var(--border-default);margin-bottom:20px;display:flex;justify-content:space-between;align-items:flex-start;">
+      <div>
+        <div style="font-size:18px;font-weight:700;font-family:var(--font-display);color:#1A3A6B;">{{ devis.tenant.nom if devis.tenant else '' }}</div>
+        <div style="font-size:16px;color:#6B7280;">NINEA : {{ devis.tenant.ninea or '' if devis.tenant else '' }}</div>
+        <div style="font-size:16px;color:#6B7280;">{{ devis.tenant.email or '' if devis.tenant else '' }}</div>
+      </div>
+      <div style="text-align:right;">
+        <div style="font-size:22px;font-weight:700;font-family:var(--font-display);color:#1A3A6B;">DEVIS</div>
+        <div style="font-size:16px;color:#6B7280;">N° {{ devis.numero }}</div>
+        <div style="font-size:16px;color:#6B7280;">{{ devis.created_at.strftime('%d %B %Y') }}</div>
+        {% if devis.valide_jusqu %}
+        <div style="font-size:16px;color:#6B7280;">Valide jusqu'au {{ devis.valide_jusqu.strftime('%d %B %Y') }}</div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Client -->
+    {% if devis.client %}
+    <div style="margin-bottom:20px;padding:14px;background:#F9FAFB;border-radius:8px;">
+      <div style="font-size:16px;font-weight:600;text-transform:uppercase;color:#6B7280;margin-bottom:8px;">Destinataire</div>
+      <div style="font-weight:600;">{{ devis.client.nom_complet }}</div>
+      {% if devis.client.entreprise %}<div style="font-size:16px;color:#374151;">{{ devis.client.entreprise }}</div>{% endif %}
+      {% if devis.client.adresse %}<div style="font-size:16px;color:#6B7280;">{{ devis.client.adresse }}</div>{% endif %}
+      {% if devis.client.email %}<div style="font-size:16px;color:#6B7280;">{{ devis.client.email }}</div>{% endif %}
+      {% if devis.client.telephone %}<div style="font-size:16px;color:#6B7280;">{{ devis.client.telephone }}</div>{% endif %}
+    </div>
+    {% endif %}
+
+    <!-- Tableau prestations -->
+    <table style="width:100%;margin-bottom:16px;">
+      <thead>
+        <tr style="background:#F9FAFB;">
+          <th style="padding:10px 12px;text-align:left;font-size:16px;font-weight:600;color:#6B7280;text-transform:uppercase;">Description</th>
+          <th style="padding:10px 8px;text-align:right;font-size:16px;font-weight:600;color:#6B7280;text-transform:uppercase;">Qté</th>
+          <th style="padding:10px 8px;text-align:right;font-size:16px;font-weight:600;color:#6B7280;text-transform:uppercase;">Prix unit.</th>
+          <th style="padding:10px 12px;text-align:right;font-size:16px;font-weight:600;color:#6B7280;text-transform:uppercase;">Total</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for ligne in devis.lignes %}
+        <tr style="border-bottom:1px solid #E5E7EB;">
+          <td style="padding:10px 12px;font-size:16px;">
+            {{ ligne.description }}
+            {% if ligne.source_ia %}<span class="pill pill-envoye" style="font-size:16px;margin-left:6px;">IA</span>{% endif %}
+          </td>
+          <td style="padding:10px 8px;text-align:right;font-size:16px;font-variant-numeric:tabular-nums;">{{ ligne.quantite }}</td>
+          <td style="padding:10px 8px;text-align:right;font-size:16px;font-variant-numeric:tabular-nums;">{{ "{:,.0f}".format(ligne.prix_unitaire or 0).replace(",", " ") }}</td>
+          <td style="padding:10px 12px;text-align:right;font-size:16px;font-weight:600;font-variant-numeric:tabular-nums;">{{ "{:,.0f}".format(ligne.total or 0).replace(",", " ") }}</td>
+        </tr>
+        {% else %}
+        <tr><td colspan="4" style="padding:16px;color:#9CA3AF;text-align:center;">Aucune ligne.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+
+    <!-- Totaux -->
+    <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;padding-top:12px;border-top:1px solid #E5E7EB;">
+      <div style="display:flex;gap:48px;font-size:16px;">
+        <span style="color:#6B7280;">Total HT</span>
+        <span style="font-variant-numeric:tabular-nums;">{{ "{:,.0f}".format(devis.total_ht or 0).replace(",", " ") }} FCFA</span>
+      </div>
+      <div style="display:flex;gap:48px;font-size:16px;">
+        <span style="color:#6B7280;">TVA ({{ devis.tva_pct }}%)</span>
+        <span style="font-variant-numeric:tabular-nums;">{{ "{:,.0f}".format(devis.total_tva or 0).replace(",", " ") }} FCFA</span>
+      </div>
+      <div style="display:flex;gap:48px;font-size:16px;font-weight:700;color:#1A3A6B;border-top:2px solid #B8860B;padding-top:8px;margin-top:4px;">
+        <span>Total TTC</span>
+        <span style="font-variant-numeric:tabular-nums;">{{ "{:,.0f}".format(devis.total_ttc or 0).replace(",", " ") }} FCFA</span>
+      </div>
+    </div>
+
+    <!-- Zone signature -->
+    <div style="margin-top:24px;padding:16px;border:2px dashed #E5E7EB;border-radius:8px;text-align:center;">
+      {% if devis.signature_nom %}
+        <div style="color:#145A32;font-weight:600;"><i data-lucide="check-circle-2" style="width:16px;height:16px;vertical-align:middle;"></i> Signé par {{ devis.signature_nom }}</div>
+        {% if devis.signe_at %}<div style="font-size:16px;color:#6B7280;">Le {{ devis.signe_at.strftime('%d %B %Y') }}</div>{% endif %}
+      {% else %}
+        <i data-lucide="pen-tool" style="width:24px;height:24px;color:#9CA3AF;"></i>
+        <div style="font-size:16px;color:#9CA3AF;margin-top:6px;">Signature électronique en attente</div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Panneau actions -->
+  <div style="display:flex;flex-direction:column;gap:16px;">
+    <!-- Statut -->
+    <div class="card">
+      <div class="card-title" style="margin-bottom:12px;">Statut du devis</div>
+      {% set statut_map = {'signe':('pill-signe','check-circle-2','Signé'),'envoye':('pill-envoye','send','Envoyé'),'ouvert':('pill-ouvert','eye','Ouvert'),'refuse':('pill-refuse','x-circle','Refusé'),'brouillon':('pill-brouillon','pencil-line','Brouillon')} %}
+      {% set cls, icon, label = statut_map.get(devis.statut, ('pill-brouillon','file','—')) %}
+      <span class="pill {{ cls }}" style="font-size:16px;height:28px;padding:0 14px;">
+        <i data-lucide="{{ icon }}" style="width:14px;height:14px;"></i> {{ label }}
+      </span>
+
+      <!-- Timeline -->
+      <div style="margin-top:16px;display:flex;flex-direction:column;gap:10px;">
+        {% for event_label, event_date in [
+          ('Créé', devis.created_at),
+          ('Envoyé', devis.envoye_at),
+          ('Ouvert', devis.ouvert_at),
+          ('Signé', devis.signe_at),
+        ] %}
+        <div style="display:flex;align-items:center;gap:10px;">
+          <div style="width:8px;height:8px;border-radius:50%;background:{{ '#145A32' if event_date else '#E8EEF5' }};flex-shrink:0;"></div>
+          <span style="font-size:16px;color:{{ '#111827' if event_date else '#9CA3AF' }};font-weight:{{ '500' if event_date else '400' }};">{{ event_label }}</span>
+          {% if event_date %}<span style="font-size:16px;color:#6B7280;margin-left:auto;">{{ event_date.strftime('%d/%m/%y %H:%M') }}</span>{% endif %}
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- Actions rapides -->
+    <div class="card">
+      <div class="card-title" style="margin-bottom:12px;">Actions</div>
+      <div style="display:flex;flex-direction:column;gap:8px;">
+        <a href="{{ url_for('devis.telecharger_pdf', devis_id=devis.id) }}" class="btn btn-secondary btn-full">
+          <i data-lucide="download" style="width:16px;height:16px;"></i> Télécharger PDF
+        </a>
+        {% if devis.statut == 'brouillon' %}
+        <form method="POST" action="{{ url_for('devis.envoyer', devis_id=devis.id) }}">
+          <button type="submit" class="btn btn-primary btn-full">
+            <i data-lucide="send" style="width:16px;height:16px;"></i> Envoyer par email / WhatsApp
+          </button>
+        </form>
+        {% endif %}
+        {% if devis.statut in ['envoye', 'ouvert'] %}
+        <form method="POST" action="{{ url_for('devis.envoyer_signature', devis_id=devis.id) }}">
+          <button type="submit" class="btn btn-gold btn-full">
+            <i data-lucide="pen-tool" style="width:16px;height:16px;"></i> Envoyer pour signature (Yousign)
+          </button>
+        </form>
+        {% endif %}
+        {% if devis.statut == 'signe' and not devis.factures %}
+        <form method="POST" action="{{ url_for('factures.depuis_devis', devis_id=devis.id) }}">
+          <button type="submit" class="btn btn-gold btn-full">
+            <i data-lucide="receipt" style="width:16px;height:16px;"></i> Convertir en facture
+          </button>
+        </form>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

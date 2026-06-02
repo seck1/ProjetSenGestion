@@ -1,0 +1,88 @@
+{% extends "layouts/base.html" %}
+{% block title %}Clients{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div class="page-header-left">
+    <h1>Clients</h1>
+    <p>{{ contacts|length }} client{{ 's' if contacts|length != 1 }} actif{{ 's' if contacts|length != 1 }}</p>
+  </div>
+  <div class="page-header-actions">
+    <a href="{{ url_for('clients.nouveau') }}" class="btn btn-gold">
+      <i data-lucide="user-plus" style="width:16px;height:16px;"></i> Nouveau client
+    </a>
+  </div>
+</div>
+
+<div class="card card-p0">
+  <div style="padding:12px 20px;border-bottom:1px solid var(--border-default);">
+    <div style="position:relative;max-width:360px;">
+      <i data-lucide="search" style="position:absolute;left:10px;top:50%;transform:translateY(-50%);width:15px;height:15px;color:var(--fg-4);pointer-events:none;"></i>
+      <input type="text" placeholder="Rechercher un client…" class="form-input" style="padding-left:32px;"
+             oninput="document.querySelectorAll('.client-row').forEach(r => r.style.display = r.dataset.search.includes(this.value.toLowerCase()) ? '' : 'none')">
+    </div>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Client</th>
+          <th>Entreprise</th>
+          <th>Email</th>
+          <th>Téléphone</th>
+          <th>Devis</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for c in contacts %}
+        <tr class="client-row" data-search="{{ (c.nom_complet ~ ' ' ~ (c.entreprise or '') ~ ' ' ~ (c.email or ''))|lower }}">
+          <td>
+            <div style="display:flex;align-items:center;gap:10px;">
+              <div class="avatar" style="width:46px;height:46px;font-size:16px;background:#1A3A6B;flex-shrink:0;">
+                {{ c.initiales }}
+              </div>
+              <div>
+                <div style="font-weight:600;font-size:16px;">{{ c.nom_complet }}</div>
+                <div style="font-size:16px;color:var(--fg-3);">{{ c.fonction or '' }}</div>
+              </div>
+            </div>
+          </td>
+          <td>{{ c.entreprise or '' }}</td>
+          <td>
+            {% if c.email %}
+            <a href="mailto:{{ c.email }}" style="color:var(--color-primary);text-decoration:none;">{{ c.email }}</a>
+            {% else %}{% endif %}
+          </td>
+          <td>{{ c.telephone or '' }}</td>
+          <td style="text-align:center;">
+            <span style="font-weight:600;color:var(--color-primary);">{{ c.devis|length }}</span>
+          </td>
+          <td>
+            <div style="display:flex;gap:6px;">
+              <a href="{{ url_for('clients.detail', client_id=c.id) }}" class="btn-action">
+                <i data-lucide="eye" style="width:14px;height:14px;"></i> Voir
+              </a>
+              <a href="{{ url_for('devis.nouveau') }}?client_id={{ c.id }}" class="btn-action" style="color:var(--color-secondary);border-color:#F2D78A;">
+                <i data-lucide="file-plus" style="width:14px;height:14px;"></i> Devis
+              </a>
+            </div>
+          </td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="6" style="text-align:center;padding:48px;color:var(--fg-4);">
+            Aucun client.
+            <a href="{{ url_for('clients.nouveau') }}" style="color:var(--color-primary);">Créer le premier</a>
+            ou <a href="{{ url_for('contacts.index') }}" style="color:var(--color-primary);">importer depuis les contacts</a>.
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<a href="{{ url_for('clients.nouveau') }}" class="fab">
+  <i data-lucide="plus" style="width:18px;height:18px;"></i> Nouveau client
+</a>
+{% endblock %}

@@ -1,0 +1,23 @@
+{% extends "layouts/base.html" %}
+{% block title %}Modifier {{ client.nom_complet }}{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div class="page-header-left"><h1>Modifier {{ client.nom_complet }}</h1></div>
+  <div class="page-header-actions"><a href="{{ url_for('clients.detail', client_id=client.id) }}" class="btn btn-ghost">Annuler</a></div>
+</div>
+<div class="card" style="max-width:640px;">
+  <form method="POST">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;">
+      <div class="form-group"><label class="form-label">Prénom</label><input type="text" name="prenom" class="form-input" value="{{ client.prenom or '' }}"></div>
+      <div class="form-group"><label class="form-label">Nom *</label><input type="text" name="nom" class="form-input" value="{{ client.nom }}" required></div>
+    </div>
+    <div class="form-group" style="margin-bottom:16px;"><label class="form-label">Entreprise</label><input type="text" name="entreprise" class="form-input" value="{{ client.entreprise or '' }}"></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;">
+      <div class="form-group"><label class="form-label">Email</label><input type="email" name="email" class="form-input" value="{{ client.email or '' }}"></div>
+      <div class="form-group"><label class="form-label">Téléphone</label><input type="tel" name="telephone" class="form-input" value="{{ client.telephone or '' }}"></div>
+    </div>
+    <div class="form-group" style="margin-bottom:24px;"><label class="form-label">Adresse</label><input type="text" name="adresse" class="form-input" value="{{ client.adresse or '' }}"></div>
+    <button type="submit" class="btn btn-primary btn-lg"><i data-lucide="save" style="width:16px;height:16px;"></i> Sauvegarder</button>
+  </form>
+</div>
+{% endblock %}

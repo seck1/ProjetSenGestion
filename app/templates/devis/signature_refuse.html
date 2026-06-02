@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Devis non disponible — SenGestion</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    html, body {
+      margin: 0; padding: 0; height: 100%;
+      font-family: Arial, Helvetica, sans-serif;
+      background: #F9FAFB; color: #1A3A6B;
+      display: flex; flex-direction: column;
+    }
+    .header { background: #1A3A6B; padding: 18px 40px; }
+    .header-logo { color: #fff; font-family: Georgia, serif; font-size: 22px; font-weight: 700; }
+    .header-sub  { color: #B8860B; font-size: 16px; letter-spacing: 1px; }
+    .center { flex: 1; display: flex; align-items: center; justify-content: center; padding: 40px 16px; }
+    .card {
+      background: #fff; border-radius: 16px; border: 2px solid #8B2500;
+      box-shadow: 0 8px 40px rgba(139,37,0,0.08);
+      padding: 56px 48px; max-width: 520px; width: 100%; text-align: center;
+    }
+    .x-circle {
+      width: 80px; height: 80px; border-radius: 50%;
+      background: #F5DDD6; display: flex; align-items: center; justify-content: center;
+      margin: 0 auto 24px;
+    }
+    .title { font-family: Georgia, serif; font-size: 26px; font-weight: 700; color: #8B2500; margin: 0 0 10px; }
+    .sub   { font-size: 17px; color: #5A6A80; margin: 0; line-height: 1.5; }
+  </style>
+</head>
+<body>
+<div class="header">
+  <div class="header-logo">SenGestion</div>
+  <div class="header-sub">GESTION INTELLIGENTE POUR LES PME</div>
+</div>
+<div class="center">
+  <div class="card">
+    <div class="x-circle">
+      <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#8B2500" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+      </svg>
+    </div>
+    <h1 class="title">Ce devis n'est plus disponible</h1>
+    <p class="sub">Ce devis a été annulé ou refusé. Contactez l'entreprise pour plus d'informations.</p>
+    <p style="font-size:16px;color:#9CA3AF;margin-top:24px;">SenGestion — Gestion intelligente pour les PME sénégalaises</p>
+  </div>
+</div>
+</body>
+</html>

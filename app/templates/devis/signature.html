@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Signer le devis {{ devis.numero }} — SenGestion</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    html, body {
+      margin: 0; padding: 0;
+      font-family: Arial, Helvetica, sans-serif;
+      font-size: 16px;
+      background: #F9FAFB;
+      color: #1A3A6B;
+    }
+    .header {
+      background: #1A3A6B;
+      padding: 18px 40px;
+      display: flex; align-items: center; gap: 16px;
+    }
+    .header-logo { color: #fff; font-family: Georgia, serif; font-size: 22px; font-weight: 700; }
+    .header-sub  { color: #B8860B; font-size: 16px; letter-spacing: 1px; }
+    .container   { max-width: 780px; margin: 40px auto; padding: 0 16px 60px; }
+
+    .devis-card {
+      background: #fff;
+      border-radius: 14px;
+      border: 2px solid #1A3A6B;
+      box-shadow: 0 4px 24px rgba(26,58,107,0.08);
+      padding: 40px;
+      margin-bottom: 28px;
+    }
+    .devis-header {
+      display: flex; justify-content: space-between; align-items: flex-start;
+      padding-bottom: 20px; border-bottom: 1px solid #E5E7EB; margin-bottom: 20px;
+    }
+    .devis-titre  { font-family: Georgia, serif; font-size: 28px; font-weight: 700; color: #1A3A6B; }
+    .devis-numero { font-size: 16px; color: #6B7280; margin-top: 4px; }
+    .label-section {
+      font-size: 16px; font-weight: 700; letter-spacing: 1.5px;
+      text-transform: uppercase; color: #B8860B;
+      border-bottom: 1px solid #E8EEF5; padding-bottom: 6px; margin: 20px 0 12px;
+    }
+    .client-box {
+      background: #F9FAFB; border-radius: 8px; padding: 14px 18px; margin-bottom: 20px;
+    }
+    .client-box .nom { font-weight: 700; font-size: 17px; }
+    .client-box .info { font-size: 16px; color: #6B7280; margin-top: 3px; }
+
+    table { width: 100%; border-collapse: collapse; margin-bottom: 16px; }
+    thead tr { background: #F9FAFB; }
+    th { padding: 10px 12px; text-align: left; font-size: 16px; font-weight: 600; color: #6B7280; text-transform: uppercase; }
+    td { padding: 10px 12px; font-size: 16px; border-bottom: 1px solid #F3F4F6; }
+    td.right { text-align: right; }
+    .total-bloc { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; padding-top: 12px; border-top: 1px solid #E5E7EB; }
+    .total-row { display: flex; gap: 60px; font-size: 16px; }
+    .total-ttc { font-weight: 700; font-size: 20px; color: #1A3A6B; border-top: 2px solid #B8860B; padding-top: 8px; margin-top: 4px; }
+
+    /* Zone signature */
+    .sign-card {
+      background: #fff;
+      border-radius: 14px;
+      border: 2px solid #B8860B;
+      box-shadow: 0 4px 24px rgba(184,134,11,0.10);
+      padding: 36px 40px;
+    }
+    .sign-title {
+      font-family: Georgia, serif; font-size: 22px; font-weight: 700;
+      color: #1A3A6B; margin: 0 0 6px;
+    }
+    .sign-sub { font-size: 16px; color: #5A6A80; margin: 0 0 24px; }
+    .form-label { display: block; font-size: 16px; font-weight: 600; color: #1A3A6B; margin-bottom: 8px; }
+    .form-input {
+      width: 100%; padding: 14px 16px; font-size: 17px; font-family: Arial, sans-serif;
+      border: 2px solid #D0DAE8; border-radius: 10px; background: #F9FAFB;
+      color: #1A3A6B; outline: none; transition: border-color 150ms;
+    }
+    .form-input:focus { border-color: #1A3A6B; background: #fff; }
+
+    /* Canvas signature manuscrite */
+    .canvas-wrap {
+      position: relative;
+      border: 2px dashed #B8860B;
+      border-radius: 10px;
+      background: #FFFBF0;
+      margin: 8px 0 4px;
+      overflow: hidden;
+      cursor: crosshair;
+    }
+    .canvas-wrap canvas { display: block; width: 100%; touch-action: none; }
+    .canvas-placeholder {
+      position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+      pointer-events: none; color: #C4A44A; font-size: 16px; font-style: italic;
+      transition: opacity .2s;
+    }
+    .canvas-toolbar {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 18px;
+    }
+    .canvas-hint { font-size: 14px; color: #9CA3AF; }
+    .btn-clear {
+      padding: 6px 14px; background: #F5DDD6; color: #8B2500;
+      border: 1px solid #8B2500; border-radius: 7px; font-size: 14px;
+      cursor: pointer; font-family: Arial, sans-serif; transition: background .15s;
+    }
+    .btn-clear:hover { background: #8B2500; color: #fff; }
+
+    .checkbox-row {
+      display: flex; align-items: flex-start; gap: 12px;
+      background: #F0F4FA; border-radius: 10px; padding: 16px;
+      margin: 20px 0; cursor: pointer;
+    }
+    .checkbox-row input[type=checkbox] { width: 20px; height: 20px; margin-top: 2px; accent-color: #1A3A6B; flex-shrink: 0; }
+    .checkbox-row label { font-size: 16px; color: #1A3A6B; cursor: pointer; line-height: 1.5; }
+    .btn-signer {
+      width: 100%; padding: 16px; background: #1A3A6B; color: #fff;
+      font-size: 18px; font-weight: 700; font-family: Arial, sans-serif;
+      border: none; border-radius: 10px; cursor: pointer;
+      transition: background 150ms; margin-top: 8px;
+      display: flex; align-items: center; justify-content: center; gap: 10px;
+    }
+    .btn-signer:hover { background: #B8860B; }
+    .secure-note {
+      text-align: center; margin-top: 14px; font-size: 16px; color: #9CA3AF;
+      display: flex; align-items: center; justify-content: center; gap: 6px;
+    }
+    .flash { padding: 14px 16px; border-radius: 8px; font-size: 16px; margin-bottom: 20px; }
+    .flash-error { background: #F5DDD6; color: #8B2500; border: 1px solid #8B2500; }
+    .notes-box { background: #FFFBF0; border: 1px solid #B8860B; border-radius: 8px; padding: 14px 18px; margin-top: 16px; font-size: 16px; color: #5A4000; }
+  </style>
+</head>
+<body>
+
+<div class="header">
+  <div>
+    <div class="header-logo">SenGestion</div>
+    <div class="header-sub">GESTION INTELLIGENTE POUR LES PME</div>
+  </div>
+</div>
+
+<div class="container">
+
+  <!-- Devis complet -->
+  <div class="devis-card">
+    <div class="devis-header">
+      <div>
+        <div class="devis-titre">{{ devis.tenant.nom if devis.tenant else '' }}</div>
+        {% if devis.tenant and devis.tenant.ninea %}
+        <div class="devis-numero">NINEA : {{ devis.tenant.ninea }}</div>
+        {% endif %}
+        {% if devis.tenant and devis.tenant.email %}
+        <div class="devis-numero">{{ devis.tenant.email }}</div>
+        {% endif %}
+      </div>
+      <div style="text-align:right;">
+        <div style="font-size:22px;font-weight:700;color:#1A3A6B;font-family:Georgia,serif;">DEVIS</div>
+        <div class="devis-numero">N° {{ devis.numero }}</div>
+        <div class="devis-numero">{{ devis.created_at.strftime('%d %B %Y') }}</div>
+        {% if devis.valide_jusqu %}
+        <div class="devis-numero" style="color:#B8860B;">Valide jusqu'au {{ devis.valide_jusqu.strftime('%d %B %Y') }}</div>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="label-section">Destinataire</div>
+    <div class="client-box">
+      <div class="nom">{{ devis.client.nom_complet if devis.client else '' }}</div>
+      {% if devis.client and devis.client.entreprise %}
+      <div class="info">{{ devis.client.entreprise }}</div>
+      {% endif %}
+      {% if devis.client and devis.client.email %}
+      <div class="info">{{ devis.client.email }}</div>
+      {% endif %}
+    </div>
+
+    {% if devis.objet %}
+    <div style="margin-bottom:16px;font-size:16px;"><strong>Objet :</strong> {{ devis.objet }}</div>
+    {% endif %}
+
+    <div class="label-section">Prestations</div>
+    <table>
+      <thead>
+        <tr>
+          <th>Description</th>
+          <th style="text-align:right;">Qté</th>
+          <th style="text-align:right;">Prix unit. (FCFA)</th>
+          <th style="text-align:right;">Total (FCFA)</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for ligne in devis.lignes %}
+        <tr>
+          <td>{{ ligne.description }}</td>
+          <td class="right">{{ ligne.quantite }}</td>
+          <td class="right">{{ "{:,.0f}".format(ligne.prix_unitaire or 0).replace(",", " ") }}</td>
+          <td class="right" style="font-weight:600;">{{ "{:,.0f}".format(ligne.total or 0).replace(",", " ") }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+
+    <div class="total-bloc">
+      <div class="total-row"><span style="color:#6B7280;">Total HT</span><span>{{ "{:,.0f}".format(devis.total_ht or 0).replace(",", " ") }} FCFA</span></div>
+      <div class="total-row"><span style="color:#6B7280;">TVA ({{ devis.tva_pct }}%)</span><span>{{ "{:,.0f}".format(devis.total_tva or 0).replace(",", " ") }} FCFA</span></div>
+      <div class="total-row total-ttc"><span>Total TTC</span><span>{{ "{:,.0f}".format(devis.total_ttc or 0).replace(",", " ") }} FCFA</span></div>
+    </div>
+
+    {% if devis.notes %}
+    <div class="notes-box"><strong>Notes :</strong> {{ devis.notes }}</div>
+    {% endif %}
+    {% if devis.conditions %}
+    <div class="notes-box" style="margin-top:10px;"><strong>Conditions :</strong> {{ devis.conditions }}</div>
+    {% endif %}
+  </div>
+
+  <!-- Zone de signature -->
+  <div class="sign-card">
+    <h2 class="sign-title">Signature électronique</h2>
+    <p class="sign-sub">Lisez attentivement le devis ci-dessus avant de signer.</p>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% for category, message in messages %}
+        <div class="flash flash-{{ category }}">{{ message }}</div>
+      {% endfor %}
+    {% endwith %}
+
+    <form method="POST" id="signForm">
+      <label class="form-label" for="nom_signataire">Votre nom complet *</label>
+      <input type="text" id="nom_signataire" name="nom_signataire" class="form-input"
+             placeholder="Ex : Aminata Diop" required
+             value="{{ request.form.get('nom_signataire', devis.client.nom_complet if devis.client else '') }}">
+
+      <!-- Signature manuscrite -->
+      <label class="form-label" style="margin-top:20px;">Signature manuscrite *</label>
+      <div class="canvas-wrap" id="canvasWrap">
+        <canvas id="sigCanvas" height="160"></canvas>
+        <div class="canvas-placeholder" id="canvasPlaceholder">Signez ici avec votre doigt ou votre souris</div>
+      </div>
+      <div class="canvas-toolbar">
+        <span class="canvas-hint">Tracez votre signature dans le cadre doré</span>
+        <button type="button" class="btn-clear" id="btnClear">Effacer</button>
+      </div>
+      <!-- Signature encodée en base64 envoyée avec le formulaire -->
+      <input type="hidden" name="signature_image" id="signatureImage">
+
+      <div class="checkbox-row">
+        <input type="checkbox" id="accepte" name="accepte" value="1" required>
+        <label for="accepte">
+          J'ai lu et j'accepte les termes de ce devis (<strong>{{ devis.numero }}</strong>)
+          d'un montant de <strong>{{ "{:,.0f}".format(devis.total_ttc or 0).replace(",", " ") }} FCFA TTC</strong>.
+          Je reconnais que cette signature électronique a la même valeur légale qu'une signature manuscrite.
+        </label>
+      </div>
+
+      <button type="submit" class="btn-signer" id="btnSigner">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
+        </svg>
+        Signer électroniquement ce devis
+      </button>
+    </form>
+
+    <div class="secure-note">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" stroke-width="2">
+        <rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+      </svg>
+      Connexion sécurisée · Votre IP et la date de signature sont enregistrées
+    </div>
+  </div>
+
+</div>
+
+<script>
+(function () {
+  const canvas      = document.getElementById('sigCanvas');
+  const ctx         = canvas.getContext('2d');
+  const wrap        = document.getElementById('canvasWrap');
+  const placeholder = document.getElementById('canvasPlaceholder');
+  const btnClear    = document.getElementById('btnClear');
+  const form        = document.getElementById('signForm');
+  const hiddenInput = document.getElementById('signatureImage');
+
+  let drawing = false;
+  let hasDrawn = false;
+
+  function resize() {
+    const ratio = window.devicePixelRatio || 1;
+    const w = wrap.clientWidth;
+    const h = 160;
+    canvas.width  = w * ratio;
+    canvas.height = h * ratio;
+    canvas.style.width  = w + 'px';
+    canvas.style.height = h + 'px';
+    ctx.scale(ratio, ratio);
+    ctx.strokeStyle = '#1A3A6B';
+    ctx.lineWidth   = 2.5;
+    ctx.lineCap     = 'round';
+    ctx.lineJoin    = 'round';
+  }
+
+  function pos(e) {
+    const r = canvas.getBoundingClientRect();
+    const src = e.touches ? e.touches[0] : e;
+    return { x: src.clientX - r.left, y: src.clientY - r.top };
+  }
+
+  function start(e) {
+    e.preventDefault();
+    drawing = true;
+    const p = pos(e);
+    ctx.beginPath();
+    ctx.moveTo(p.x, p.y);
+  }
+
+  function move(e) {
+    e.preventDefault();
+    if (!drawing) return;
+    const p = pos(e);
+    ctx.lineTo(p.x, p.y);
+    ctx.stroke();
+    if (!hasDrawn) {
+      hasDrawn = true;
+      placeholder.style.opacity = '0';
+    }
+  }
+
+  function stop(e) {
+    e.preventDefault();
+    drawing = false;
+  }
+
+  canvas.addEventListener('mousedown',  start);
+  canvas.addEventListener('mousemove',  move);
+  canvas.addEventListener('mouseup',    stop);
+  canvas.addEventListener('mouseleave', stop);
+  canvas.addEventListener('touchstart', start, { passive: false });
+  canvas.addEventListener('touchmove',  move,  { passive: false });
+  canvas.addEventListener('touchend',   stop,  { passive: false });
+
+  btnClear.addEventListener('click', function () {
+    const ratio = window.devicePixelRatio || 1;
+    ctx.clearRect(0, 0, canvas.width / ratio, canvas.height / ratio);
+    hasDrawn = false;
+    placeholder.style.opacity = '1';
+  });
+
+  form.addEventListener('submit', function (e) {
+    if (!hasDrawn) {
+      e.preventDefault();
+      alert('Veuillez tracer votre signature dans le cadre doré avant de valider.');
+      return;
+    }
+    hiddenInput.value = canvas.toDataURL('image/png');
+  });
+
+  resize();
+  window.addEventListener('resize', resize);
+})();
+</script>
+</body>
+</html>

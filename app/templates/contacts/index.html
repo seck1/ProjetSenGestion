@@ -1,0 +1,839 @@
+{% extends "layouts/base.html" %}
+{% block title %}Contacts{% endblock %}
+
+{% block extra_css %}
+<style>
+.tab-pane { display:none; }
+.tab-pane.active { display:block; }
+
+input::placeholder { color: #1A3A6B !important; opacity: 1; }
+
+.drop-zone {
+  border:2px dashed var(--border-default); border-radius:12px;
+  background:var(--bg-app); cursor:pointer;
+  transition:border-color 200ms, background 200ms;
+}
+.drop-zone.dragover { border-color:var(--color-primary); background:var(--color-primary-soft); }
+
+/* Badge confiance par champ */
+.field-wrap { position:relative; }
+.conf-badge {
+  position:absolute; right:10px; top:50%; transform:translateY(-50%);
+  font-size:16px; font-weight:600; padding:2px 6px;
+  border-radius:9999px; pointer-events:none; display:none;
+}
+.conf-high   { background:var(--color-success-soft); color:var(--color-success-deep); }
+.conf-medium { background:var(--color-warning-soft); color:var(--color-secondary-deep); }
+.conf-low    { background:var(--color-danger-soft);  color:var(--color-danger-deep); }
+
+/* ── Carte de visite verticale ── */
+.contact-card {
+  background: #fff;
+  border-radius: 20px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  width: 380px;
+  min-height: 400px;
+  border: 2px solid #1A3A6B;
+  box-shadow: 0 4px 20px rgba(26,58,107,0.10), 0 1px 4px rgba(0,0,0,0.06);
+  transition: box-shadow 300ms cubic-bezier(.16,1,.3,1), transform 300ms cubic-bezier(.16,1,.3,1);
+  position: relative;
+}
+.contact-card:hover {
+  box-shadow: 0 16px 48px rgba(26,58,107,0.20), 0 4px 12px rgba(0,0,0,0.08);
+  transform: translateY(-6px) scale(1.01);
+}
+
+/* Zone supérieure — bleu navy uni */
+.contact-card-header {
+  background: #1A3A6B;
+  padding: 28px 20px 32px;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  min-height: 200px;
+}
+
+/* Motif décoratif en arrière-plan */
+.contact-card-header::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 20% 20%, rgba(255,255,255,0.06) 0%, transparent 50%),
+    radial-gradient(circle at 80% 80%, rgba(184,134,11,0.15) 0%, transparent 50%);
+  pointer-events: none;
+}
+
+/* Badge source coin haut gauche */
+.contact-card-header .source-badge {
+  position: absolute;
+  top: 14px;
+  left: 14px;
+  z-index: 2;
+}
+
+/* Badge converti coin haut droit */
+.contact-card-header .converted-badge {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  z-index: 2;
+}
+
+/* Avatar centré */
+.contact-card-avatar {
+  width: 72px; height: 72px;
+  border-radius: 50%;
+  border: 3px solid rgba(255,255,255,0.5);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 26px; font-weight: 700; color: #fff;
+  margin-bottom: 14px;
+  margin-top: 10px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.30), 0 0 0 6px rgba(255,255,255,0.08);
+  position: relative; z-index: 1;
+  letter-spacing: 0.05em;
+}
+
+/* Nom */
+.contact-card-header .name {
+  font-size: 18px; font-weight: 700; color: #fff;
+  line-height: 1.2; margin-bottom: 5px;
+  position: relative; z-index: 1;
+}
+
+/* Fonction */
+.contact-card-header .fonction {
+  font-size: 12pt; color: rgba(255,255,255,0.70);
+  margin-bottom: 6px;
+  position: relative; z-index: 1;
+  letter-spacing: 0.03em;
+}
+
+/* Entreprise */
+.contact-card-header .entreprise {
+  font-size: 12pt; font-weight: 700;
+  color: #B8860B;
+  letter-spacing: 0.04em;
+  position: relative; z-index: 1;
+}
+
+/* Séparateur décoratif */
+.contact-card-divider {
+  height: 3px;
+  background: linear-gradient(90deg, transparent, #B8860B 40%, #B8860B 50%, #B8860B 60%, transparent);
+}
+
+/* Corps */
+.contact-card-body {
+  padding: 16px 18px 12px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.contact-info-row {
+  display: flex; align-items: center; gap: 10px;
+  font-size: 12pt; color: var(--fg-2);
+  min-width: 0;
+}
+.contact-info-icon {
+  width: 30px; height: 30px;
+  border-radius: 8px;
+  background: var(--color-primary-soft);
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+  color: var(--color-primary);
+}
+.contact-info-row a {
+  color: var(--color-primary); text-decoration: none;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  min-width: 0; font-size: 12pt;
+}
+.contact-info-row a:hover { text-decoration: underline; }
+.contact-info-row span {
+  min-width: 0;
+  word-break: break-word;
+  line-height: 1.4;
+}
+
+/* Actions */
+.contact-card-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 12px 14px;
+  border-top: 1px solid var(--border-default);
+  background: #F9FAFB;
+}
+.contact-action-btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 5px;
+  padding: 7px 12px; border-radius: 9px;
+  border: 1.5px solid var(--border-default);
+  background: #fff; color: var(--fg-2);
+  font-size: 12pt; font-weight: 600; cursor: pointer;
+  text-decoration: none; transition: all 150ms;
+  white-space: nowrap; flex: 1;
+}
+.contact-action-btn:hover { background: var(--color-primary-soft); border-color: #E8EEF5; color: var(--color-primary); }
+.contact-action-btn.wa { color:var(--color-primary); border-color:var(--border-default); background:#F9FAFB; }
+.contact-action-btn.wa:hover { background:var(--color-primary-soft); border-color:var(--color-primary); color:var(--color-primary); }
+.contact-action-btn.gold { color:var(--color-success); border-color:var(--color-success-soft); background:var(--color-success-soft); flex-basis: 100%; }
+.contact-action-btn.gold:hover { background:var(--color-success); color:#fff; border-color:var(--color-success); }
+.contact-action-btn.danger { color:var(--color-danger); border-color:var(--color-danger-soft); background:var(--color-danger-soft); flex-basis: 100%; }
+.contact-action-btn.danger:hover { background:var(--color-danger); color:#fff; border-color:var(--color-danger); }
+
+/* QR viewfinder */
+#qr-video { width:100%; border-radius:10px; background:#000; display:block; height:260px; object-fit:cover; }
+.qr-overlay { position:absolute; inset:0; pointer-events:none; }
+.qr-corner {
+  position:absolute; width:44px; height:44px;
+  border-color:var(--color-secondary); border-style:solid; border-width:0;
+}
+.qr-corner.tl { top:18%; left:18%; border-top-width:3px; border-left-width:3px; border-radius:4px 0 0 0; }
+.qr-corner.tr { top:18%; right:18%; border-top-width:3px; border-right-width:3px; border-radius:0 4px 0 0; }
+.qr-corner.bl { bottom:18%; left:18%; border-bottom-width:3px; border-left-width:3px; border-radius:0 0 0 4px; }
+.qr-corner.br { bottom:18%; right:18%; border-bottom-width:3px; border-right-width:3px; border-radius:0 0 4px 0; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div class="page-header-left">
+    <h1>Contacts</h1>
+    <p style="color:#1A3A6B;">Carnet d'adresses — scannez des cartes de visite lors de vos salons et événements</p>
+  </div>
+  <div class="page-header-actions">
+    <span style="font-size:12pt;color:#1A3A6B;padding:0 8px;">{{ contacts|length }} contact{{ 's' if contacts|length != 1 }}</span>
+  </div>
+</div>
+
+<!-- Onglets -->
+<div class="tabs">
+  <button class="tab-btn active" onclick="switchTab('liste', this)">
+    <i data-lucide="address-book" style="width:16px;height:16px;"></i> Liste des contacts
+  </button>
+  <button class="tab-btn" onclick="switchTab('scanner', this)" id="tabScannerBtn">
+    <i data-lucide="scan-line" style="width:16px;height:16px;"></i> Scanner une carte
+  </button>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════
+     ONGLET LISTE
+═══════════════════════════════════════════════════════════ -->
+<div id="tab-liste" class="tab-pane active">
+
+  <!-- Barre de recherche + action -->
+  <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;">
+    <div style="position:relative;flex:1;max-width:400px;">
+      <i data-lucide="search" style="position:absolute;left:10px;top:50%;transform:translateY(-50%);width:15px;height:15px;color:var(--fg-4);pointer-events:none;"></i>
+      <input type="text" placeholder="Rechercher un contact…" class="form-input" style="padding-left:32px;"
+             oninput="filterContacts(this.value)">
+    </div>
+    <button onclick="switchTab('scanner', document.getElementById('tabScannerBtn'))" class="btn btn-gold">
+      <i data-lucide="scan-line" style="width:14px;height:14px;"></i> Scanner une carte
+    </button>
+  </div>
+
+  {% if contacts %}
+  <!-- Grille de cartes -->
+  <div id="contactsGrid" style="display:flex;flex-wrap:wrap;gap:24px;">
+
+    {% for c in contacts %}
+    <div class="contact-card contact-row"
+         data-search="{{ (c.nom_complet ~ ' ' ~ (c.entreprise or '') ~ ' ' ~ (c.email or '') ~ ' ' ~ (c.evenement or ''))|lower }}">
+
+      <!-- ── En-tête verticale (style carte de visite) ── -->
+      <div class="contact-card-header">
+
+        <!-- Badge source haut gauche -->
+        <div class="source-badge">
+          {% if c.source == 'scan_carte' %}
+            <span class="pill" style="font-size:12pt;background:#E8EEF5;color:#1A3A6B;border:1px solid #1A3A6B;">
+              <i data-lucide="scan" style="width:10px;height:10px;"></i> Carte IA
+            </span>
+          {% elif c.source == 'qrcode' %}
+            <span class="pill" style="font-size:12pt;background:#E8EEF5;color:#1A3A6B;border:1px solid #1A3A6B;">
+              <i data-lucide="qr-code" style="width:10px;height:10px;"></i> QR Code
+            </span>
+          {% else %}
+            <span class="pill" style="font-size:12pt;background:#E8EEF5;color:#1A3A6B;border:1px solid #1A3A6B;">
+              <i data-lucide="pen-line" style="width:10px;height:10px;"></i> Manuel
+            </span>
+          {% endif %}
+        </div>
+
+        {% if c.est_converti %}
+        <div class="converted-badge">
+          <span class="pill" style="font-size:12pt;background:#FEF3C7;color:#B8860B;border:1px solid #B8860B;">
+            <i data-lucide="check-circle-2" style="width:10px;height:10px;"></i> Client
+          </span>
+        </div>
+        {% endif %}
+
+        <!-- Avatar centré -->
+        <div class="contact-card-avatar"
+          style="background:rgba(26,58,107,0.40);">
+          {{ c.initiales }}
+        </div>
+
+        <!-- Nom, fonction, entreprise centrés -->
+        <div class="name">{{ c.nom_complet }}</div>
+        {% if c.fonction %}<div class="fonction">{{ c.fonction }}</div>{% endif %}
+        {% if c.entreprise %}<div class="entreprise">{{ c.entreprise }}</div>{% endif %}
+      </div>
+
+      <!-- Séparateur doré -->
+      <div class="contact-card-divider"></div>
+
+      <!-- ── Corps : coordonnées ── -->
+      <div class="contact-card-body">
+        {% if c.telephone %}
+        <div class="contact-info-row">
+          <div class="contact-info-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.15 3.41 2 2 0 0 1 3.11 1h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.09 8.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 21 16z"/></svg>
+          </div>
+          <span>{{ c.telephone }}</span>
+        </div>
+        {% endif %}
+        {% if c.email %}
+        <div class="contact-info-row">
+          <div class="contact-info-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
+          </div>
+          <a href="mailto:{{ c.email }}">{{ c.email }}</a>
+        </div>
+        {% endif %}
+        {% if c.adresse %}
+        <div class="contact-info-row">
+          <div class="contact-info-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+          </div>
+          <span style="color:var(--fg-3);font-size:12pt;">{{ c.adresse }}</span>
+        </div>
+        {% endif %}
+        {% if c.site_web %}
+        <div class="contact-info-row">
+          <div class="contact-info-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+          </div>
+          <a href="{{ c.site_web if c.site_web.startswith('http') else 'https://' ~ c.site_web }}" target="_blank" style="color:var(--color-primary);font-size:12pt;word-break:break-all;">{{ c.site_web }}</a>
+        </div>
+        {% endif %}
+        {% if c.evenement %}
+        <div class="contact-info-row">
+          <div class="contact-info-icon" style="background:var(--color-primary-soft);color:var(--color-primary);">
+            <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>
+          </div>
+          <span style="color:var(--fg-3);">{{ c.evenement }}</span>
+        </div>
+        {% endif %}
+      </div>
+
+      <!-- ── Actions ── -->
+      <div class="contact-card-actions">
+        {% if c.telephone %}
+        <a href="tel:{{ c.telephone }}" class="contact-action-btn">
+          <svg style="width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;" viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.81a19.79 19.79 0 01-3.07-8.72A2 2 0 012 1h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.09 8.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/></svg>
+          Appeler
+        </a>
+        <a href="https://wa.me/{{ c.telephone | replace(' ','') | replace('+','') | replace('-','') }}"
+           target="_blank" class="contact-action-btn wa">
+          <svg style="width:14px;height:14px;fill:currentColor;" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.127.558 4.126 1.533 5.862L.057 23.012a.75.75 0 00.931.931l5.15-1.476A11.952 11.952 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.891 0-3.667-.523-5.184-1.433l-.372-.217-3.857 1.107 1.06-3.747-.237-.389A9.953 9.953 0 012 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/></svg>
+          WhatsApp
+        </a>
+        {% endif %}
+
+        <a href="{{ url_for('contacts.vcard', contact_id=c.id) }}" class="contact-action-btn">
+          <i data-lucide="download" style="width:14px;height:14px;"></i> vCard
+        </a>
+
+        <a href="{{ url_for('contacts.detail', contact_id=c.id) }}" class="contact-action-btn" style="flex:1;">
+          <i data-lucide="eye" style="width:14px;height:14px;"></i> Voir
+        </a>
+        <a href="{{ url_for('contacts.modifier', contact_id=c.id) }}" class="contact-action-btn" style="flex:1;">
+          <i data-lucide="pencil" style="width:14px;height:14px;"></i> Modifier
+        </a>
+
+        {% if not c.est_converti %}
+        <form method="POST" action="{{ url_for('contacts.convertir_en_client', contact_id=c.id) }}" style="display:contents;">
+          <button type="submit" class="contact-action-btn gold" style="flex-basis:100%;">
+            <i data-lucide="user-check" style="width:14px;height:14px;"></i> Convertir en Client
+          </button>
+        </form>
+        {% endif %}
+
+        <form method="POST" action="{{ url_for('contacts.supprimer', contact_id=c.id) }}"
+              onsubmit="return confirm('Supprimer ce contact ?');" style="display:contents;">
+          <button type="submit" class="contact-action-btn danger">
+            <i data-lucide="trash-2" style="width:14px;height:14px;"></i> Supprimer
+          </button>
+        </form>
+
+      </div>
+
+    </div>
+    {% endfor %}
+
+  </div>
+
+  {% else %}
+  <div class="card" style="text-align:center;padding:64px;">
+    <i data-lucide="contact-2" style="width:56px;height:56px;color:#E8EEF5;"></i>
+    <h2 style="font-size:18px;margin-top:16px;margin-bottom:8px;">Aucun contact pour l'instant</h2>
+    <p style="color:var(--fg-3);font-size:12pt;margin-bottom:20px;">
+      Scannez des cartes de visite lors de vos salons et événements.<br>
+      Les contacts s'enregistrent en quelques secondes.
+    </p>
+    <button onclick="switchTab('scanner', document.getElementById('tabScannerBtn'))" class="btn btn-gold btn-lg">
+      <i data-lucide="scan-line" style="width:18px;height:18px;"></i> Scanner ma première carte
+    </button>
+  </div>
+  {% endif %}
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════
+     ONGLET SCANNER
+═══════════════════════════════════════════════════════════ -->
+<div id="tab-scanner" class="tab-pane">
+  <div class="grid-1-1">
+
+    <!-- Colonne gauche : input scan -->
+    <div style="display:flex;flex-direction:column;gap:16px;">
+
+      <!-- Sélecteur de mode -->
+      <div class="card" style="padding:14px;">
+        <div style="display:flex;gap:8px;">
+          <button id="modeCarteBtn" onclick="setMode('carte')" class="btn btn-primary" style="flex:1;">
+            <i data-lucide="image" style="width:16px;height:16px;"></i> Carte de visite
+          </button>
+          <button id="modeQrBtn" onclick="setMode('qr')" class="btn btn-secondary" style="flex:1;">
+            <i data-lucide="qr-code" style="width:16px;height:16px;"></i> QR Code
+          </button>
+        </div>
+      </div>
+
+      <!-- ── Mode carte ── -->
+      <div id="modeCarte" class="card">
+        <div class="card-header">
+          <i data-lucide="image" style="width:18px;height:18px;color:var(--color-primary);"></i>
+          <div>
+            <div class="card-title">Photo de carte de visite</div>
+            <div class="card-sub">Claude IA extrait automatiquement les coordonnées</div>
+          </div>
+          <span class="pill pill-brouillon" id="carteBadge" style="margin-left:auto;">En attente</span>
+        </div>
+        <div style="padding:20px;">
+          <div id="dropZone" class="drop-zone" style="padding:40px;text-align:center;"
+               onclick="document.getElementById('fileInput').click()"
+               ondragover="event.preventDefault();this.classList.add('dragover')"
+               ondragleave="this.classList.remove('dragover')"
+               ondrop="handleDrop(event)">
+            <i data-lucide="upload-cloud" style="width:40px;height:40px;color:var(--fg-4);margin-bottom:10px;"></i>
+            <p style="font-size:16px;color:var(--fg-3);">
+              Glissez une image ici<br>ou <strong style="color:var(--color-primary);">cliquez pour parcourir</strong>
+            </p>
+            <p style="font-size:16px;color:var(--fg-4);margin-top:4px;">JPG, PNG, WEBP · max 10 Mo</p>
+          </div>
+          <input type="file" id="fileInput" accept="image/*,.heic,.heif" style="display:none;" onchange="handleFile(this.files[0])">
+
+          <div id="cardPreview" style="display:none;margin-top:14px;text-align:center;">
+            <img id="cardImage" alt=""
+                 style="max-width:100%;max-height:200px;border-radius:10px;box-shadow:var(--shadow-md);display:block;margin:0 auto;">
+          </div>
+
+          <button id="analyseBtn" onclick="analyserCarte()"
+                  class="btn btn-primary btn-full" style="margin-top:14px;display:none;">
+            <i data-lucide="sparkles" style="width:16px;height:16px;"></i> Analyser avec Claude IA
+          </button>
+        </div>
+      </div>
+
+      <!-- ── Mode QR ── -->
+      <div id="modeQr" class="card" style="display:none;">
+        <div class="card-header">
+          <i data-lucide="qr-code" style="width:18px;height:18px;color:var(--color-primary);"></i>
+          <div>
+            <div class="card-title">Scanner un QR Code</div>
+            <div class="card-sub">Pointez la caméra vers un QR code de carte de visite</div>
+          </div>
+          <span class="pill pill-brouillon" id="qrBadge" style="margin-left:auto;">En attente</span>
+        </div>
+        <div style="padding:20px;">
+          <div style="position:relative;border-radius:10px;overflow:hidden;">
+            <video id="qr-video" autoplay playsinline></video>
+            <canvas id="qr-canvas" style="display:none;"></canvas>
+            <div class="qr-overlay">
+              <div class="qr-corner tl"></div>
+              <div class="qr-corner tr"></div>
+              <div class="qr-corner bl"></div>
+              <div class="qr-corner br"></div>
+            </div>
+          </div>
+          <p id="qrStatus" style="margin-top:10px;font-size:16px;color:var(--fg-3);text-align:center;">Caméra non démarrée</p>
+          <div style="display:flex;gap:8px;margin-top:10px;">
+            <button id="startCamBtn" onclick="startCamera()" class="btn btn-primary" style="flex:1;">
+              <i data-lucide="camera" style="width:16px;height:16px;"></i> Activer la caméra
+            </button>
+            <button id="stopCamBtn" onclick="stopCamera()" class="btn btn-secondary" style="flex:1;display:none;">
+              <i data-lucide="camera-off" style="width:16px;height:16px;"></i> Arrêter
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Colonne droite : formulaire extrait -->
+    <div class="card">
+      <div class="card-header">
+        <div style="width:32px;height:32px;border-radius:8px;background:linear-gradient(135deg,#1A3A6B,#B8860B);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+          <i data-lucide="sparkles" style="width:16px;height:16px;color:#fff;"></i>
+        </div>
+        <div>
+          <div class="card-title">Informations extraites</div>
+          <div class="card-sub" id="iaSubtitle">En attente du scan</div>
+        </div>
+        <span class="pill" id="confianceBadge" style="margin-left:auto;display:none;"></span>
+      </div>
+
+      <div style="padding:20px;">
+        <!-- Placeholder -->
+        <div id="formPlaceholder" style="text-align:center;padding:40px 0;color:var(--fg-4);">
+          <i data-lucide="scan-line" style="width:40px;height:40px;color:#E8EEF5;"></i>
+          <p style="margin-top:10px;font-size:16px;">Scannez une carte pour remplir ce formulaire automatiquement.</p>
+        </div>
+
+        <!-- Formulaire -->
+        <form id="contactForm" method="POST" action="{{ url_for('contacts.enregistrer') }}" style="display:none;">
+          <input type="hidden" name="confiance_ia" id="confianceInput" value="0">
+          <input type="hidden" name="source_mode" id="sourceModeInput" value="scan_carte">
+
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
+            <div class="form-group">
+              <label class="form-label">Prénom</label>
+              <div class="field-wrap">
+                <input type="text" name="prenom" id="f_prenom" class="form-input" placeholder="">
+                <span class="conf-badge" id="conf_prenom"></span>
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Nom *</label>
+              <div class="field-wrap">
+                <input type="text" name="nom" id="f_nom" class="form-input" placeholder="" required>
+                <span class="conf-badge" id="conf_nom"></span>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-group" style="margin-bottom:12px;">
+            <label class="form-label">Entreprise</label>
+            <div class="field-wrap">
+              <input type="text" name="entreprise" id="f_entreprise" class="form-input" placeholder="">
+              <span class="conf-badge" id="conf_entreprise"></span>
+            </div>
+          </div>
+
+          <div class="form-group" style="margin-bottom:12px;">
+            <label class="form-label">Fonction / Poste</label>
+            <div class="field-wrap">
+              <input type="text" name="fonction" id="f_fonction" class="form-input" placeholder="">
+              <span class="conf-badge" id="conf_fonction"></span>
+            </div>
+          </div>
+
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
+            <div class="form-group">
+              <label class="form-label">Email</label>
+              <div class="field-wrap">
+                <input type="email" name="email" id="f_email" class="form-input" placeholder="">
+                <span class="conf-badge" id="conf_email"></span>
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Téléphone</label>
+              <div class="field-wrap">
+                <input type="tel" name="telephone" id="f_telephone" class="form-input" placeholder="">
+                <span class="conf-badge" id="conf_telephone"></span>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-group" style="margin-bottom:12px;">
+            <label class="form-label">Adresse</label>
+            <input type="text" name="adresse" id="f_adresse" class="form-input" placeholder="">
+          </div>
+
+          <div class="form-group" style="margin-bottom:12px;">
+            <label class="form-label">Site web</label>
+            <input type="text" name="site_web" id="f_site_web" class="form-input" placeholder="ex : www.entreprise.com">
+          </div>
+
+          <!-- Champ événement — contexte salon -->
+          <div class="form-group" style="margin-bottom:20px;">
+            <label class="form-label">Événement / Salon</label>
+            <div class="input-with-icon">
+              <i data-lucide="map-pin" class="input-icon" style="width:15px;height:15px;"></i>
+              <input type="text" name="evenement" id="f_evenement" class="form-input"
+                     style="padding-left:32px;" placeholder="ex : FESSENAK 2026, Forum PME Dakar…">
+            </div>
+          </div>
+
+          <div style="display:flex;gap:10px;">
+            <button type="button" onclick="resetScan()" class="btn btn-secondary">
+              <i data-lucide="rotate-ccw" style="width:15px;height:15px;"></i> Recommencer
+            </button>
+            <button type="submit" class="btn btn-primary" style="flex:1;">
+              <i data-lucide="user-plus" style="width:16px;height:16px;"></i> Enregistrer le contact
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
+<script>
+let imageBase64 = null;
+let cameraStream = null;
+let qrInterval = null;
+
+// ── Onglets ──────────────────────────────────────────────────
+function switchTab(name, btn) {
+  document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  btn.classList.add('active');
+  if (name !== 'scanner') stopCamera();
+}
+
+// ── Modes scan ───────────────────────────────────────────────
+function setMode(mode) {
+  document.getElementById('modeCarte').style.display = mode === 'carte' ? 'block' : 'none';
+  document.getElementById('modeQr').style.display    = mode === 'qr'    ? 'block' : 'none';
+  document.getElementById('modeCarteBtn').className  = 'btn ' + (mode === 'carte' ? 'btn-primary' : 'btn-secondary');
+  document.getElementById('modeQrBtn').className     = 'btn ' + (mode === 'qr'    ? 'btn-primary' : 'btn-secondary');
+  if (mode !== 'qr') stopCamera();
+}
+
+// ── Carte de visite ──────────────────────────────────────────
+function handleDrop(e) {
+  e.preventDefault();
+  document.getElementById('dropZone').classList.remove('dragover');
+  handleFile(e.dataTransfer.files[0]);
+}
+
+let currentFile = null;
+
+function handleFile(file) {
+  if (!file) return;
+  currentFile = file;
+
+  // Preview : essayer de l'afficher, sinon afficher le nom du fichier
+  const reader = new FileReader();
+  reader.onload = e => {
+    const img = document.getElementById('cardImage');
+    img.onerror = () => {
+      // HEIC ou format non affichable dans le browser → afficher le nom
+      img.style.display = 'none';
+      let nameEl = document.getElementById('fileName');
+      if (!nameEl) {
+        nameEl = document.createElement('p');
+        nameEl.id = 'fileName';
+        nameEl.style.cssText = 'font-size:12pt;color:var(--fg-2);padding:12px 0;';
+        img.parentNode.appendChild(nameEl);
+      }
+      nameEl.textContent = '📎 ' + file.name;
+    };
+    img.style.display = 'block';
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+
+  document.getElementById('cardPreview').style.display = 'block';
+  document.getElementById('analyseBtn').style.display  = 'flex';
+  document.getElementById('dropZone').style.display    = 'none';
+}
+
+async function analyserCarte() {
+  const btn = document.getElementById('analyseBtn');
+  btn.disabled    = true;
+  btn.textContent = 'Analyse Claude en cours…';
+
+  try {
+    let body, headers = {};
+    if (currentFile) {
+      // Envoyer le fichier directement (supporte HEIC, PNG, JPG…)
+      const form = new FormData();
+      form.append('file', currentFile);
+      body = form;
+    } else {
+      headers = { 'Content-Type': 'application/json' };
+      body    = JSON.stringify({ image: imageBase64 });
+    }
+    const res  = await fetch('{{ url_for("contacts.scan_analyser") }}', {
+      method: 'POST',
+      headers,
+      body,
+    });
+    const data = await res.json();
+
+    if (data.success) {
+      document.getElementById('sourceModeInput').value = 'scan_carte';
+      remplirFormulaire(data.champs, data.confiances, data.confiance_globale);
+      document.getElementById('carteBadge').className   = 'pill pill-actif';
+      document.getElementById('carteBadge').textContent = 'Analysée ✓';
+    } else {
+      const msg = data.error || 'Erreur inconnue';
+      const isCleAPI = msg.includes('api_key') || msg.includes('ANTHROPIC') || msg.includes('authentication');
+      alert(isCleAPI
+        ? '⚠️ Clé API Anthropic non configurée.\n\nVa dans le fichier .env et remplace "your_anthropic_api_key_here" par ta vraie clé sur console.anthropic.com'
+        : 'Erreur IA : ' + msg);
+      btn.disabled    = false;
+      btn.textContent = 'Réessayer';
+    }
+  } catch (e) {
+    alert('Erreur de connexion au serveur : ' + e.message);
+    btn.disabled = false;
+  }
+  lucide.createIcons();
+}
+
+// ── QR Code ──────────────────────────────────────────────────
+async function startCamera() {
+  try {
+    cameraStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+    document.getElementById('qr-video').srcObject = cameraStream;
+    document.getElementById('startCamBtn').style.display = 'none';
+    document.getElementById('stopCamBtn').style.display  = 'flex';
+    document.getElementById('qrStatus').textContent      = 'Pointez vers un QR code…';
+    document.getElementById('qrBadge').textContent       = 'Scan actif';
+    qrInterval = setInterval(scanFrame, 300);
+    lucide.createIcons();
+  } catch (e) {
+    document.getElementById('qrStatus').textContent = 'Accès caméra refusé : ' + e.message;
+  }
+}
+
+function stopCamera() {
+  if (cameraStream) { cameraStream.getTracks().forEach(t => t.stop()); cameraStream = null; }
+  if (qrInterval)   { clearInterval(qrInterval); qrInterval = null; }
+  const video = document.getElementById('qr-video');
+  if (video) video.srcObject = null;
+  const s = document.getElementById('startCamBtn');
+  const p = document.getElementById('stopCamBtn');
+  if (s) s.style.display = 'flex';
+  if (p) p.style.display = 'none';
+}
+
+function scanFrame() {
+  const video  = document.getElementById('qr-video');
+  const canvas = document.getElementById('qr-canvas');
+  if (!video || video.readyState !== video.HAVE_ENOUGH_DATA) return;
+
+  canvas.width  = video.videoWidth;
+  canvas.height = video.videoHeight;
+  canvas.getContext('2d').drawImage(video, 0, 0);
+  const img  = canvas.getContext('2d').getImageData(0, 0, canvas.width, canvas.height);
+  const code = jsQR(img.data, img.width, img.height);
+
+  if (code) {
+    stopCamera();
+    document.getElementById('qrStatus').textContent  = 'QR Code détecté !';
+    document.getElementById('qrBadge').className     = 'pill pill-actif';
+    document.getElementById('qrBadge').textContent   = 'Détecté ✓';
+    document.getElementById('sourceModeInput').value = 'qrcode';
+    traiterQR(code.data);
+  }
+}
+
+function traiterQR(texte) {
+  const c = { nom:'', prenom:'', entreprise:'', fonction:'', email:'', telephone:'', adresse:'' };
+
+  if (texte.startsWith('BEGIN:VCARD')) {
+    texte.split(/\r?\n/).forEach(line => {
+      const sep  = line.indexOf(':');
+      if (sep < 0) return;
+      const key = line.substring(0, sep).split(';')[0].toUpperCase();
+      const val = line.substring(sep + 1).trim();
+      if (key === 'FN')    c.nom       = val;
+      if (key === 'N')   { const p = val.split(';'); c.nom = p[0]||''; c.prenom = p[1]||''; }
+      if (key === 'ORG')   c.entreprise = val.replace(/;/g,' ').trim();
+      if (key === 'TITLE') c.fonction   = val;
+      if (key.startsWith('EMAIL')) c.email     = val;
+      if (key.startsWith('TEL'))   c.telephone = val;
+      if (key.startsWith('ADR'))   c.adresse   = val.replace(/;+/g,' ').trim();
+    });
+  } else {
+    try { Object.assign(c, JSON.parse(texte)); }
+    catch { c.nom = texte.substring(0, 100); }
+  }
+
+  remplirFormulaire(c, {}, 100);
+}
+
+// ── Remplissage formulaire ───────────────────────────────────
+function remplirFormulaire(champs, confiances, confianceGlobale) {
+  ['nom','prenom','entreprise','fonction','email','telephone','adresse','site_web'].forEach(f => {
+    const el = document.getElementById('f_' + f);
+    if (el) el.value = champs[f] || '';
+
+    const badge = document.getElementById('conf_' + f);
+    if (badge && confiances && confiances[f] !== undefined) {
+      const v = confiances[f];
+      badge.textContent = v + '%';
+      badge.className   = 'conf-badge ' + (v >= 85 ? 'conf-high' : v >= 60 ? 'conf-medium' : 'conf-low');
+      badge.style.display = 'inline-block';
+    }
+  });
+
+  document.getElementById('confianceInput').value = confianceGlobale || 0;
+
+  const badge = document.getElementById('confianceBadge');
+  badge.style.display = 'inline-flex';
+  badge.className     = 'pill pill-actif';
+  badge.textContent   = (confianceGlobale || 100) + '% confiance';
+
+  const nb = Object.values(champs).filter(v => v).length;
+  document.getElementById('iaSubtitle').textContent   = nb + ' champs détectés — vérifiez avant d\'enregistrer';
+  document.getElementById('formPlaceholder').style.display = 'none';
+  document.getElementById('contactForm').style.display     = 'block';
+  lucide.createIcons();
+}
+
+function resetScan() {
+  imageBase64 = null;
+  document.getElementById('cardImage').src              = '';
+  document.getElementById('cardPreview').style.display  = 'none';
+  document.getElementById('analyseBtn').style.display   = 'none';
+  document.getElementById('dropZone').style.display     = 'block';
+  document.getElementById('carteBadge').className       = 'pill pill-brouillon';
+  document.getElementById('carteBadge').textContent     = 'En attente';
+  document.getElementById('contactForm').style.display  = 'none';
+  document.getElementById('formPlaceholder').style.display = 'block';
+  document.getElementById('confianceBadge').style.display  = 'none';
+  document.getElementById('iaSubtitle').textContent        = 'En attente du scan';
+  ['f_nom','f_prenom','f_entreprise','f_fonction','f_email','f_telephone','f_adresse','f_site_web','f_evenement']
+    .forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+}
+
+// ── Recherche ────────────────────────────────────────────────
+function filterContacts(query) {
+  const q = query.toLowerCase();
+  document.querySelectorAll('.contact-row').forEach(row => {
+    row.style.display = row.dataset.search.includes(q) ? '' : 'none';
+  });
+}
+
+// Ouvrir scanner si ?tab=scanner dans l'URL
+if (new URLSearchParams(window.location.search).get('tab') === 'scanner' || window.location.hash === '#scanner') {
+  switchTab('scanner', document.getElementById('tabScannerBtn'));
+}
+</script>
+{% endblock %}

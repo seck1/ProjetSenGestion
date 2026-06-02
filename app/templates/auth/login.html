@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Connexion — SenGestion</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/tokens.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --navy: #1A3A6B;
+      --navy-deep: #1A3A6B;
+      --gold: #B8860B;
+      --gold-light: #B8860B;
+      --gold-pale: rgba(184,134,11,0.12);
+      --white: #ffffff;
+      --offwhite: #F9FAFB;
+      --text-muted: rgba(255,255,255,0.80);
+    }
+
+    html, body {
+      height: 100%;
+      overflow: hidden;
+    }
+
+    body {
+      display: flex;
+      font-family: Arial, Helvetica, sans-serif;
+      background: var(--offwhite);
+    }
+
+    /* ════════════════════════════════
+       PANNEAU GAUCHE
+    ════════════════════════════════ */
+    .promo {
+      flex: 0 0 56%;
+      background: var(--navy-deep);
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      padding: 32px 68px 28px;
+      overflow: hidden;
+      height: 100%;
+    }
+
+
+    /* Logo ancré en haut dans le flux */
+    .promo-logo {
+      flex-shrink: 0;
+    }
+    .promo-logo img {
+      height: 72px;
+      object-fit: contain;
+    }
+
+    /* Trait or vertical à gauche du contenu */
+    .promo-content {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-evenly;
+      position: relative;
+      z-index: 1;
+      padding: 0 0 0 20px;
+      border-left: 3px solid var(--gold);
+    }
+
+    .promo-eyebrow {
+      font-size: 16px;
+      font-weight: 700;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: var(--gold-light);
+      margin-bottom: 18px;
+    }
+
+    .promo-title {
+      font-family: 'Palatino Linotype', Palatino, 'Book Antiqua', Georgia, serif;
+      font-size: 52px;
+      font-weight: 700;
+      color: var(--white);
+      line-height: 1.15;
+      margin-bottom: 14px;
+    }
+    .promo-title .accent { color: var(--gold); font-style: normal; }
+
+    .promo-sub {
+      font-size: 18px;
+      color: var(--text-muted);
+      line-height: 1.6;
+      margin-bottom: 0;
+      max-width: 420px;
+    }
+
+    /* Features — grille 2x2 cartes détaillées */
+    .features {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      grid-template-rows: 260px 260px;
+      gap: 12px;
+    }
+
+    .feature {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      text-align: center;
+      gap: 10px;
+      padding: 28px 16px 24px;
+      border-radius: 14px;
+      background: #F9FAFB;
+      border: 1px solid #E8EEF5;
+      border-top: 3px solid #B8860B;
+      transition: background 200ms, transform 200ms;
+      cursor: default;
+    }
+    .feature:hover {
+      background: #fff;
+      transform: translateY(-4px);
+    }
+
+    .feature-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      background: rgba(26,58,107,0.08);
+      border: 1.5px solid rgba(184,134,11,0.50);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .feature-icon svg {
+      width: 22px;
+      height: 22px;
+      stroke: #B8860B;
+      fill: none;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .feature-body h4 {
+      font-size: 20px;
+      font-weight: 700;
+      color: #1A3A6B;
+      margin-bottom: 8px;
+      line-height: 1.3;
+    }
+    .feature-body p {
+      font-size: 16px;
+      color: #4a5a7a;
+      line-height: 1.6;
+    }
+    .feature-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+      justify-content: center;
+      margin-top: 6px;
+    }
+    .feature-tag {
+      font-size: 16px;
+      font-weight: 600;
+      color: #B8860B;
+      background: rgba(184,134,11,0.10);
+      border: 1px solid rgba(184,134,11,0.25);
+      border-radius: 20px;
+      padding: 2px 8px;
+    }
+
+
+    /* Footer décoratif bas panneau gauche */
+    .promo-footer {
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 20px 0 28px;
+    }
+    .promo-footer-line {
+      flex: 1;
+      height: 1px;
+      background: linear-gradient(to right, rgba(184,134,11,0.6), rgba(184,134,11,0.05));
+    }
+    .promo-footer-text {
+      font-size: 16px;
+      letter-spacing: 2.5px;
+      text-transform: uppercase;
+      color: rgba(184,134,11,0.75);
+      font-weight: 600;
+      white-space: nowrap;
+    }
+    .promo-footer-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--gold);
+      flex-shrink: 0;
+      box-shadow: 0 0 8px rgba(184,134,11,0.5);
+    }
+
+    /* ════════════════════════════════
+       PANNEAU DROIT
+    ════════════════════════════════ */
+    .login-panel {
+      flex: 0 0 44%;
+      min-height: 0;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: 24px 56px;
+      background: #F9FAFB;
+      overflow-y: auto;
+      box-shadow: -12px 0 60px rgba(10,20,50,0.10);
+    }
+
+    .login-logo {
+      text-align: center;
+      margin-bottom: 12px;
+    }
+    .login-logo img {
+      height: 150px;
+      object-fit: contain;
+    }
+
+    .login-heading {
+      font-family: 'Palatino Linotype', Palatino, 'Book Antiqua', Georgia, serif;
+      font-size: 34px;
+      font-weight: 700;
+      color: var(--navy);
+      text-align: center;
+      margin-bottom: 4px;
+    }
+
+    .login-sub {
+      font-size: 18px;
+      color: #5a6a8a;
+      text-align: center;
+      margin-bottom: 16px;
+      line-height: 1.5;
+    }
+
+    /* Séparateur or sous le titre */
+    .gold-rule {
+      width: 48px;
+      height: 3px;
+      background: var(--gold);
+      border-radius: 2px;
+      margin: 0 auto 16px;
+    }
+
+    .form-group { margin-bottom: 12px; }
+
+    .form-label-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 8px;
+    }
+    .form-label-row label {
+      font-size: 18px;
+      font-weight: 600;
+      color: var(--navy);
+      letter-spacing: 0.5px;
+    }
+    .forgot {
+      font-size: 18px;
+      color: var(--gold);
+      text-decoration: none;
+      font-weight: 600;
+    }
+    .forgot:hover { text-decoration: underline; }
+
+    .field-wrap {
+      position: relative;
+    }
+    .field-icon {
+      position: absolute;
+      left: 14px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: #9aaecc;
+      pointer-events: none;
+    }
+    .field-icon svg {
+      width: 16px; height: 16px;
+      stroke: #9aaecc;
+      fill: none;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+    .field-input {
+      width: 100%;
+      padding: 13px 14px 13px 42px;
+      border: 1.5px solid #dce6f0;
+      border-radius: 10px;
+      font-size: 18px;
+      color: var(--navy);
+      background: #ffffff;
+      transition: border-color 200ms, box-shadow 200ms;
+      outline: none;
+    }
+    .field-input:focus {
+      border-color: var(--navy);
+      background: #ffffff;
+      box-shadow: 0 0 0 3px rgba(26,58,107,0.08);
+    }
+    .field-input::placeholder { color: #aabbd0; }
+    .field-input:-webkit-autofill {
+      font-size: 18px !important;
+      -webkit-text-fill-color: #1A3A6B !important;
+      background-color: #ffffff !important;
+      box-shadow: 0 0 0px 1000px #ffffff inset !important;
+    }
+
+    .check-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin: 10px 0 14px;
+      cursor: pointer;
+      font-size: 18px;
+      color: var(--navy);
+    }
+    .check-row input {
+      width: 17px; height: 17px;
+      accent-color: var(--navy);
+      cursor: pointer;
+    }
+
+    .btn-login {
+      width: 100%;
+      padding: 15px;
+      background: var(--navy);
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      font-size: 20px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      transition: background 200ms, transform 100ms;
+    }
+    .btn-login:hover { background: #0F2347; }
+    .btn-login:active { transform: scale(0.99); }
+    .btn-login svg { width: 18px; height: 18px; stroke: #fff; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+    .divider {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin: 22px 0;
+      font-size: 18px;
+      color: #9aaecc;
+    }
+    .divider::before, .divider::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: #dce6f0;
+    }
+
+    .btn-wave {
+      width: 100%;
+      padding: 13px;
+      background: transparent;
+      color: var(--navy);
+      border: 1.5px solid #dce6f0;
+      border-radius: 10px;
+      font-size: 18px;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      transition: border-color 200ms, background 200ms;
+    }
+    .btn-wave:hover { border-color: var(--navy); background: #f0f4fa; }
+    .btn-wave svg { width: 18px; height: 18px; stroke: var(--navy); fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+    .register-row {
+      text-align: center;
+      margin-top: 12px;
+      font-size: 18px;
+      color: #5a6a8a;
+    }
+    .register-row a {
+      color: var(--gold);
+      text-decoration: none;
+      font-weight: 700;
+    }
+    .register-row a:hover { text-decoration: underline; }
+
+    .login-footer {
+      text-align: center;
+      margin-top: 10px;
+      font-size: 16px;
+      color: #7a8a9a;
+    }
+
+    @media (max-width: 960px) {
+      .promo { display: none; }
+      .login-panel { flex: 1; box-shadow: none; overflow-y: auto; }
+      html, body { overflow: auto; height: auto; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ══ PANNEAU GAUCHE ══ -->
+<div class="promo">
+  <div class="promo-content">
+    <div class="promo-intro">
+      <h1 class="promo-title">
+        Gérez votre activité<br>
+        avec <span class="accent">intelligence</span>
+      </h1>
+      <p class="promo-sub">
+        SenGestion est le CRM tout-en-un conçu pour les PME sénégalaises.
+        Devis, factures, contacts, tout en un seul endroit.
+      </p>
+    </div>
+
+    <div class="features">
+
+      <div class="feature">
+        <div class="feature-icon">
+          <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+        </div>
+        <div class="feature-body">
+          <h4>Devis &amp; Factures</h4>
+          <p>Créez des devis professionnels en quelques clics, envoyez-les par email et suivez les paiements en temps réel.</p>
+          <div class="feature-tags">
+            <span class="feature-tag">PDF automatique</span>
+            <span class="feature-tag">Suivi paiements</span>
+            <span class="feature-tag">Relances</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="feature">
+        <div class="feature-icon">
+          <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        </div>
+        <div class="feature-body">
+          <h4>Contacts &amp; Clients</h4>
+          <p>Scannez des cartes de visite par IA, gérez vos prospects et convertissez-les en clients fidèles.</p>
+          <div class="feature-tags">
+            <span class="feature-tag">Scan IA</span>
+            <span class="feature-tag">Pipeline</span>
+            <span class="feature-tag">Historique</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="feature">
+        <div class="feature-icon">
+          <svg viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
+        </div>
+        <div class="feature-body">
+          <h4>Charges &amp; Dépenses</h4>
+          <p>Enregistrez et catégorisez toutes vos charges. Gardez un œil sur votre trésorerie à tout moment.</p>
+          <div class="feature-tags">
+            <span class="feature-tag">Catégories</span>
+            <span class="feature-tag">Trésorerie</span>
+            <span class="feature-tag">Justificatifs</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="feature">
+        <div class="feature-icon">
+          <svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+        </div>
+        <div class="feature-body">
+          <h4>Rapports &amp; Analyses</h4>
+          <p>Visualisez la performance de votre entreprise avec des tableaux de bord clairs et des rapports détaillés.</p>
+          <div class="feature-tags">
+            <span class="feature-tag">Tableau de bord</span>
+            <span class="feature-tag">Export PDF</span>
+            <span class="feature-tag">KPIs</span>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /features -->
+
+  </div><!-- /promo-content -->
+
+  <!-- Footer décoratif or -->
+  <div class="promo-footer">
+    <div class="promo-footer-dot"></div>
+    <div class="promo-footer-text">Fait au Sénégal · PME · CRM</div>
+    <div class="promo-footer-line"></div>
+  </div>
+
+</div>
+
+<!-- ══ PANNEAU DROIT ══ -->
+<div class="login-panel">
+
+  <div class="login-logo">
+    <img src="{{ url_for('static', filename='img/logo.png') }}" alt="SenGestion">
+  </div>
+
+  <h1 class="login-heading">Bienvenue</h1>
+  <div class="gold-rule"></div>
+  <p class="login-sub">Connectez-vous à votre espace SenGestion.</p>
+
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% for category, message in messages %}
+      <div class="flash flash-{{ category }}">{{ message }}</div>
+    {% endfor %}
+  {% endwith %}
+
+  <form method="POST" action="{{ url_for('auth.login') }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() if csrf_token is defined else '' }}">
+
+    <div class="form-group">
+      <div class="form-label-row">
+        <label for="email">Email professionnel</label>
+      </div>
+      <div class="field-wrap">
+        <span class="field-icon">
+          <svg viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+        </span>
+        <input id="email" type="email" name="email" class="field-input"
+               placeholder="vous@entreprise.sn" required
+               value="{{ request.form.get('email', '') }}">
+      </div>
+    </div>
+
+    <div class="form-group">
+      <div class="form-label-row">
+        <label for="password">Mot de passe</label>
+        <a href="{{ url_for('auth.forgot_password') }}" class="forgot">Oublié ?</a>
+      </div>
+      <div class="field-wrap">
+        <span class="field-icon">
+          <svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+        </span>
+        <input id="password" type="password" name="password" class="field-input"
+               placeholder="••••••••" required>
+      </div>
+    </div>
+
+    <label class="check-row">
+      <input type="checkbox" name="remember"> Garder ma session active
+    </label>
+
+    <button type="submit" class="btn-login">
+      <svg viewBox="0 0 24 24"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
+      Se connecter
+    </button>
+  </form>
+
+
+  <div class="register-row">
+    Pas encore de compte ?
+    <a href="{{ url_for('auth.register') }}">Créer un compte entreprise</a>
+  </div>
+
+  <div class="login-footer">SenGestion · Gestion intelligente pour les PME sénégalaises</div>
+</div>
+
+</body>
+</html>

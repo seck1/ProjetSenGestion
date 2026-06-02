@@ -1,0 +1,182 @@
+{% extends "layouts/base.html" %}
+{% block title %}Tontines{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div class="page-header-left">
+    <h1>Tontines</h1>
+    <p>Suivi de vos épargnes collectives — mises, tours, et bénéficiaires.</p>
+  </div>
+  <div class="page-header-actions">
+    <button class="btn btn-gold" onclick="document.getElementById('modalTontine').style.display='flex'">
+      <i data-lucide="plus" style="width:16px;height:16px;"></i> Créer une tontine
+    </button>
+  </div>
+</div>
+
+<div class="grid-380-1">
+  <!-- Liste tontines -->
+  <div class="card card-p0">
+    <div class="card-header"><div class="card-title">Tontines actives</div></div>
+    {% for t in tontines %}
+    <a href="{{ url_for('tontines.index', id=t.id) }}"
+       style="display:block;padding:14px 16px;border-bottom:1px solid var(--border-default);text-decoration:none;
+              {% if selected and selected.id == t.id %}background:#E8EEF5;border-left:3px solid #1A3A6B;{% endif %}
+              transition:background 150ms;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+        <span style="font-size:16px;font-weight:600;color:#111827;">{{ t.nom }}</span>
+        {% if t.statut == 'actif' %}
+          <span class="pill pill-actif" style="font-size:16px;"><i data-lucide="check-circle-2" style="width:10px;height:10px;"></i> Actif</span>
+        {% else %}
+          <span class="pill pill-attente" style="font-size:16px;"><i data-lucide="alert-circle" style="width:10px;height:10px;"></i> {{ t.statut|capitalize }}</span>
+        {% endif %}
+      </div>
+      <div style="display:flex;align-items:center;gap:12px;font-size:16px;color:#6B7280;margin-bottom:8px;">
+        <span><i data-lucide="users" style="width:12px;height:12px;vertical-align:middle;"></i> {{ t.membres|length }} membres</span>
+        <span>{{ t.frequence|capitalize }}</span>
+      </div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+        <span style="font-size:16px;font-weight:600;color:#1A3A6B;">{{ "{:,.0f}".format(t.mise).replace(",", " ") }} FCFA / tour</span>
+        <span style="font-size:16px;color:#6B7280;">Tour {{ t.tour_actuel }}/{{ t.nb_tours }}</span>
+      </div>
+      <!-- Barre de progression -->
+      <div style="height:4px;background:#E5E7EB;border-radius:2px;overflow:hidden;">
+        <div style="height:100%;background:{% if t.statut == 'actif' %}#1A3A6B{% else %}#B8860B{% endif %};width:{{ [(t.tour_actuel / t.nb_tours * 100)|int, 100]|min }}%;"></div>
+      </div>
+    </a>
+    {% else %}
+    <div style="padding:48px;text-align:center;color:#9CA3AF;font-size:16px;">Aucune tontine.</div>
+    {% endfor %}
+  </div>
+
+  <!-- Détail tontine sélectionnée -->
+  <div>
+    {% if selected %}
+    <div class="card" style="margin-bottom:16px;">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;">
+        <div style="width:36px;height:36px;border-radius:8px;background:#1A3A6B;display:flex;align-items:center;justify-content:center;">
+          <i data-lucide="circle-dollar-sign" style="width:18px;height:18px;color:#fff;"></i>
+        </div>
+        <h2 style="font-size:20px;">{{ selected.nom }}</h2>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px;">
+        <div style="text-align:center;padding:12px;background:#F9FAFB;border-radius:8px;">
+          <div style="font-size:16px;color:#6B7280;margin-bottom:4px;">Membres</div>
+          <div style="font-size:18px;font-weight:700;color:#111827;">{{ selected.membres|length }}</div>
+        </div>
+        <div style="text-align:center;padding:12px;background:#F9FAFB;border-radius:8px;">
+          <div style="font-size:16px;color:#6B7280;margin-bottom:4px;">Mise</div>
+          <div style="font-size:16px;font-weight:700;color:#111827;">{{ "{:,.0f}".format(selected.mise).replace(",", " ") }}</div>
+        </div>
+        <div style="text-align:center;padding:12px;background:#FEF3C7;border-radius:8px;">
+          <div style="font-size:16px;color:#92400E;margin-bottom:4px;">Pot total</div>
+          <div style="font-size:16px;font-weight:700;color:#B8860B;">{{ "{:,.0f}".format(selected.pot_total).replace(",", " ") }}</div>
+        </div>
+        <div style="text-align:center;padding:12px;background:#F9FAFB;border-radius:8px;">
+          <div style="font-size:16px;color:#6B7280;margin-bottom:4px;">Avancement</div>
+          <div style="font-size:18px;font-weight:700;color:#111827;">{{ [(selected.tour_actuel / selected.nb_tours * 100)|int, 100]|min }}%</div>
+        </div>
+      </div>
+
+      <!-- Prochain tour -->
+      <div style="padding:16px;background:linear-gradient(135deg,#FEF3C7,#F9F1D9);border:1px solid #F2D78A;border-radius:8px;display:flex;align-items:center;gap:16px;">
+        <div style="width:44px;height:44px;border-radius:50%;background:#B8860B;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+          <i data-lucide="hand-coins" style="width:20px;height:20px;color:#fff;"></i>
+        </div>
+        <div style="flex:1;">
+          <div style="font-size:16px;font-weight:600;text-transform:uppercase;color:#92400E;margin-bottom:2px;">Prochain bénéficiaire</div>
+          <div style="font-size:16px;font-weight:700;color:#111827;">Tour {{ selected.tour_actuel }}</div>
+          <div style="font-size:16px;color:#6B7280;">{{ "{:,.0f}".format(selected.pot_total).replace(",", " ") }} FCFA</div>
+        </div>
+        <form method="POST" action="{{ url_for('tontines.valider_tour', tontine_id=selected.id) }}">
+          <button type="submit" class="btn btn-gold">Valider le tour</button>
+        </form>
+      </div>
+    </div>
+
+    <!-- Membres -->
+    <div class="card card-p0">
+      <div class="card-header"><div class="card-title">Membres ({{ selected.membres|length }})</div></div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>#</th><th>Membre</th><th>Statut paiement</th><th>Dernier paiement</th></tr></thead>
+          <tbody>
+            {% for m in selected.membres %}
+            <tr>
+              <td style="font-variant-numeric:tabular-nums;color:#6B7280;">{{ m.position_tour or loop.index }}</td>
+              <td>
+                <div style="display:flex;align-items:center;gap:8px;">
+                  <div class="avatar" style="width:28px;height:28px;font-size:16px;background:#1A3A6B;">{{ m.nom[:2].upper() }}</div>
+                  <div>
+                    <div style="font-weight:500;font-size:16px;">{{ m.nom }}</div>
+                    {% if m.telephone %}<div style="font-size:16px;color:#6B7280;">{{ m.telephone }}</div>{% endif %}
+                  </div>
+                </div>
+              </td>
+              <td>
+                {% if m.statut == 'actif' %}
+                  <span class="pill pill-actif"><i data-lucide="check-circle-2" style="width:11px;height:11px;"></i> Actif</span>
+                {% else %}
+                  <span class="pill pill-attente"><i data-lucide="alert-circle" style="width:11px;height:11px;"></i> En retard</span>
+                {% endif %}
+              </td>
+              <td style="font-size:16px;color:#6B7280;">{{ m.dernier_paiement.strftime('%d/%m/%y') if m.dernier_paiement else '' }}</td>
+            </tr>
+            {% else %}
+            <tr><td colspan="4" style="text-align:center;padding:24px;color:#9CA3AF;">Aucun membre.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+    {% else %}
+    <div class="card" style="text-align:center;padding:48px;">
+      <i data-lucide="circle-dollar-sign" style="width:48px;height:48px;color:#E5E7EB;"></i>
+      <p style="margin-top:12px;color:#9CA3AF;">Sélectionnez une tontine pour voir les détails.</p>
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+<!-- Modal créer tontine -->
+<div id="modalTontine" style="display:none;position:fixed;inset:0;background:rgba(17,24,39,0.5);z-index:200;align-items:center;justify-content:center;">
+  <div style="background:#fff;border-radius:12px;padding:32px;width:480px;box-shadow:var(--shadow-lg);">
+    <h2 style="font-size:20px;margin-bottom:20px;">Créer une tontine</h2>
+    <form method="POST" action="{{ url_for('tontines.creer') }}">
+      <div class="form-group" style="margin-bottom:14px;">
+        <label class="form-label">Nom *</label>
+        <input type="text" name="nom" class="form-input" required placeholder="Tontine Famille Sow…">
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;">
+        <div class="form-group">
+          <label class="form-label">Fréquence</label>
+          <select name="frequence" class="form-input">
+            <option value="mensuelle">Mensuelle</option>
+            <option value="hebdomadaire">Hebdomadaire</option>
+            <option value="trimestrielle">Trimestrielle</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Mise (FCFA) *</label>
+          <input type="number" name="mise" class="form-input" required min="1" placeholder="50000">
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px;">
+        <div class="form-group">
+          <label class="form-label">Nombre de tours *</label>
+          <input type="number" name="nb_tours" class="form-input" required min="1" placeholder="12">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Date de début</label>
+          <input type="date" name="date_debut" class="form-input">
+        </div>
+      </div>
+      <div style="display:flex;gap:10px;">
+        <button type="button" class="btn btn-secondary" style="flex:1;" onclick="document.getElementById('modalTontine').style.display='none'">Annuler</button>
+        <button type="submit" class="btn btn-primary" style="flex:1;">
+          <i data-lucide="plus" style="width:16px;height:16px;"></i> Créer
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

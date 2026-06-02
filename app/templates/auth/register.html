@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Créer un compte — SenGestion</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/tokens.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js" defer></script>
+  <style>
+    body {
+      min-height: 100vh;
+      display: flex; align-items: center; justify-content: center;
+      background: var(--bg-app);
+      position: relative;
+      padding: 40px 16px;
+    }
+    .register-card {
+      width: 540px;
+      background: var(--bg-card);
+      border-radius: var(--radius-card);
+      box-shadow: var(--shadow-lg);
+      padding: 40px;
+      position: relative; z-index: 1;
+    }
+    .register-logo { text-align: center; margin-bottom: 24px; }
+    .register-logo img { width: 200px; max-height: 140px; object-fit: contain; }
+    .register-title {
+      font-size: 26px; font-weight: 700;
+      color: #1A3A6B; text-align: center; margin-bottom: 4px;
+    }
+    .register-sub {
+      font-size: 16px; color: var(--fg-3);
+      text-align: center; margin-bottom: 28px;
+    }
+    .section-label {
+      font-size: 16px; font-weight: 700; letter-spacing: 1.5px;
+      text-transform: uppercase; color: #B8860B;
+      border-bottom: 1px solid #E8EEF5;
+      padding-bottom: 6px; margin: 20px 0 14px;
+    }
+    .form-row { display: flex; gap: 12px; }
+    .form-row .form-group { flex: 1; }
+    .form-group { margin-bottom: 14px; }
+
+    .plan-grid { display: flex; gap: 10px; margin-bottom: 14px; }
+    .plan-option { display: none; }
+    .plan-card {
+      flex: 1; border: 2px solid #E8EEF5; border-radius: 10px;
+      padding: 12px 10px; text-align: center; cursor: pointer;
+      transition: border-color 150ms, background 150ms;
+    }
+    .plan-option:checked + .plan-card {
+      border-color: #1A3A6B; background: #E8EEF5;
+    }
+    .plan-card .plan-name { font-size: 16px; font-weight: 700; color: #1A3A6B; display: block; }
+    .plan-card .plan-price { font-size: 16px; color: #B8860B; font-weight: 600; }
+    .plan-card .plan-desc { font-size: 16px; color: #666; margin-top: 2px; }
+
+    .login-link {
+      text-align: center; margin-top: 20px;
+      font-size: 16px; color: var(--fg-3);
+    }
+    .login-link a { color: var(--color-primary); text-decoration: none; }
+    .login-link a:hover { text-decoration: underline; }
+    .login-footer {
+      position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+      font-size: 16px; color: var(--fg-3); white-space: nowrap;
+    }
+  </style>
+</head>
+<body>
+
+<div class="register-card">
+  <div class="register-logo">
+    <img src="{{ url_for('static', filename='img/logo.png') }}" alt="SenGestion">
+  </div>
+  <h1 class="register-title">Créer votre espace</h1>
+  <p class="register-sub">Gérez votre activité avec SenGestion. Gratuit pour commencer.</p>
+
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% for category, message in messages %}
+      <div class="flash flash-{{ category }}">{{ message }}</div>
+    {% endfor %}
+  {% endwith %}
+
+  <form method="POST" action="{{ url_for('auth.register') }}">
+
+    <div class="section-label">Votre entreprise</div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Nom de l'entreprise *</label>
+        <div class="input-with-icon">
+          <i data-lucide="building-2" class="input-icon" style="width:16px;height:16px;"></i>
+          <input type="text" name="nom_entreprise" class="form-input"
+                 placeholder="Téranga Conseil SARL" required
+                 value="{{ request.form.get('nom_entreprise', '') }}">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">NINEA</label>
+        <div class="input-with-icon">
+          <i data-lucide="hash" class="input-icon" style="width:16px;height:16px;"></i>
+          <input type="text" name="ninea" class="form-input"
+                 placeholder="005 432 1098"
+                 value="{{ request.form.get('ninea', '') }}">
+        </div>
+      </div>
+    </div>
+
+    <div class="section-label">Votre compte</div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Prénom *</label>
+        <div class="input-with-icon">
+          <i data-lucide="user" class="input-icon" style="width:16px;height:16px;"></i>
+          <input type="text" name="prenom" class="form-input"
+                 placeholder="Aminata" required
+                 value="{{ request.form.get('prenom', '') }}">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Nom *</label>
+        <div class="input-with-icon">
+          <i data-lucide="user" class="input-icon" style="width:16px;height:16px;"></i>
+          <input type="text" name="nom" class="form-input"
+                 placeholder="Diop" required
+                 value="{{ request.form.get('nom', '') }}">
+        </div>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Email professionnel *</label>
+      <div class="input-with-icon">
+        <i data-lucide="mail" class="input-icon" style="width:16px;height:16px;"></i>
+        <input type="email" name="email" class="form-input"
+               placeholder="vous@entreprise.sn" required
+               value="{{ request.form.get('email', '') }}">
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Mot de passe *</label>
+      <div class="input-with-icon">
+        <i data-lucide="lock" class="input-icon" style="width:16px;height:16px;"></i>
+        <input type="password" name="password" class="form-input"
+               placeholder="Minimum 6 caractères" required minlength="6">
+      </div>
+    </div>
+
+    <div class="section-label">Choisir un plan</div>
+    <div class="plan-grid">
+      <label>
+        <input type="radio" name="plan" value="starter" class="plan-option" checked>
+        <div class="plan-card">
+          <span class="plan-name">Starter</span>
+          <span class="plan-price">Gratuit</span>
+          <div class="plan-desc">1 utilisateur · fonctions de base</div>
+        </div>
+      </label>
+      <label>
+        <input type="radio" name="plan" value="pro" class="plan-option">
+        <div class="plan-card">
+          <span class="plan-name">Pro</span>
+          <span class="plan-price">25 000 F/mois</span>
+          <div class="plan-desc">5 utilisateurs · toutes fonctions</div>
+        </div>
+      </label>
+      <label>
+        <input type="radio" name="plan" value="enterprise" class="plan-option">
+        <div class="plan-card">
+          <span class="plan-name">Enterprise</span>
+          <span class="plan-price">Sur devis</span>
+          <div class="plan-desc">Illimité · support dédié</div>
+        </div>
+      </label>
+    </div>
+
+    <button type="submit" class="btn btn-primary btn-full btn-lg" style="margin-top:8px;">
+      <i data-lucide="rocket" style="width:18px;height:18px;"></i>
+      Créer mon espace SenGestion
+    </button>
+  </form>
+
+  <div class="login-link">
+    Déjà un compte ? <a href="{{ url_for('auth.login') }}">Se connecter</a>
+  </div>
+</div>
+
+<p class="login-footer">SenGestion — Gestion intelligente pour les PME sénégalaises</p>
+
+<script>lucide.createIcons();</script>
+</body>
+</html>

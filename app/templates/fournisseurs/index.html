@@ -1,0 +1,109 @@
+{% extends "layouts/base.html" %}
+{% block title %}Fournisseurs{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div class="page-header-left">
+    <h1>Fournisseurs</h1>
+    <p>{{ fournisseurs|length }} fournisseur{{ 's' if fournisseurs|length != 1 }} enregistré{{ 's' if fournisseurs|length != 1 }}</p>
+  </div>
+  <div class="page-header-actions">
+    <a href="{{ url_for('fournisseurs.nouveau') }}" class="btn btn-gold">
+      <i data-lucide="plus" style="width:16px;height:16px;"></i> Nouveau fournisseur
+    </a>
+  </div>
+</div>
+
+{% with messages = get_flashed_messages() %}
+  {% if messages %}
+    {% for msg in messages %}
+    <div class="flash flash-success" style="margin-bottom:16px;">{{ msg }}</div>
+    {% endfor %}
+  {% endif %}
+{% endwith %}
+
+{% if fournisseurs %}
+{% set cat_icons = {
+  'transport':     ('🚗','#E8EEF5','#1A3A6B'),
+  'repas':         ('🍽️','#FEF3C7','#B8860B'),
+  'fournitures':   ('📦','#E8EEF5','#1A3A6B'),
+  'communication': ('📱','#E8EEF5','#1A3A6B'),
+  'loyer':         ('🏢','#FEF3C7','#B8860B'),
+  'salaires':      ('💼','#E8EEF5','#1A3A6B'),
+  'hebergement':   ('🏨','#FEF3C7','#B8860B'),
+  'divers':        ('📌','#E8EEF5','#1A3A6B'),
+} %}
+
+<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;">
+  {% for f in fournisseurs %}
+  {% set icon, bg, fg = cat_icons.get(f.categorie, ('📌','#E8EEF5','#1A3A6B')) %}
+  <div style="background:#fff;border:1px solid var(--border-default);border-radius:14px;padding:20px;
+              display:flex;flex-direction:column;gap:12px;
+              transition:box-shadow 180ms,transform 180ms;"
+       onmouseenter="this.style.boxShadow='0 4px 18px rgba(0,0,0,.08)';this.style.transform='translateY(-2px)'"
+       onmouseleave="this.style.boxShadow='';this.style.transform=''">
+
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;">
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:18px;font-weight:700;color:var(--fg-1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+          {{ f.nom }}
+        </div>
+        {% if f.ninea %}
+        <div style="font-size:16px;color:var(--fg-3);">NINEA : {{ f.ninea }}</div>
+        {% endif %}
+      </div>
+      <div style="width:40px;height:40px;border-radius:10px;background:{{ bg }};display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;">{{ icon }}</div>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:6px;">
+      {% if f.telephone %}
+      <div style="display:flex;align-items:center;gap:8px;font-size:16px;color:var(--fg-2);">
+        <i data-lucide="phone" style="width:14px;height:14px;color:var(--fg-4);flex-shrink:0;"></i>
+        <a href="tel:{{ f.telephone }}" style="color:inherit;text-decoration:none;">{{ f.telephone }}</a>
+      </div>
+      {% endif %}
+      {% if f.email %}
+      <div style="display:flex;align-items:center;gap:8px;font-size:16px;color:var(--fg-2);">
+        <i data-lucide="mail" style="width:14px;height:14px;color:var(--fg-4);flex-shrink:0;"></i>
+        <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ f.email }}</span>
+      </div>
+      {% endif %}
+    </div>
+
+    <div style="display:flex;align-items:center;justify-content:space-between;padding-top:10px;border-top:1px solid var(--border-default);">
+      <div>
+        <div style="font-size:16px;color:var(--fg-4);">Total dépensé</div>
+        <div style="font-size:18px;font-weight:700;color:var(--color-primary);">
+          {{ '{:,.0f}'.format(totaux.get(f.id, 0)).replace(',', ' ') }} FCFA
+        </div>
+      </div>
+      <a href="{{ url_for('fournisseurs.detail', fournisseur_id=f.id) }}"
+         style="display:inline-flex;align-items:center;gap:6px;padding:7px 14px;
+                border-radius:8px;border:1.5px solid var(--border-default);
+                background:#fff;color:var(--fg-2);font-size:16px;font-weight:600;
+                text-decoration:none;transition:background 150ms,border-color 150ms;"
+         onmouseenter="this.style.background='var(--color-primary-soft)';this.style.borderColor='var(--color-primary)';this.style.color='var(--color-primary)'"
+         onmouseleave="this.style.background='#fff';this.style.borderColor='var(--border-default)';this.style.color='var(--fg-2)'">
+        <i data-lucide="arrow-right" style="width:14px;height:14px;"></i> Voir
+      </a>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+
+{% else %}
+<div class="card" style="text-align:center;padding:64px;">
+  <i data-lucide="building-2" style="width:56px;height:56px;color:#E5E7EB;margin-bottom:16px;display:block;margin-left:auto;margin-right:auto;"></i>
+  <h2 style="font-size:18px;margin-bottom:8px;">Aucun fournisseur enregistré</h2>
+  <p style="color:var(--fg-3);font-size:16px;margin-bottom:20px;">Ajoutez vos fournisseurs pour suivre vos dépenses par prestataire.</p>
+  <a href="{{ url_for('fournisseurs.nouveau') }}" class="btn btn-gold">
+    <i data-lucide="plus" style="width:16px;height:16px;"></i> Ajouter un fournisseur
+  </a>
+</div>
+{% endif %}
+
+<a href="{{ url_for('fournisseurs.nouveau') }}" class="fab">
+  <i data-lucide="plus" style="width:18px;height:18px;"></i>
+  Nouveau fournisseur
+</a>
+{% endblock %}

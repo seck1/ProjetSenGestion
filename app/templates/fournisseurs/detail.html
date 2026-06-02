@@ -1,0 +1,153 @@
+{% extends "layouts/base.html" %}
+{% block title %}{{ f.nom }}{% endblock %}
+{% block content %}
+
+<div class="page-header">
+  <div class="page-header-left">
+    <a href="{{ url_for('fournisseurs.index') }}" style="color:var(--fg-3);text-decoration:none;font-size:16px;display:flex;align-items:center;gap:4px;margin-bottom:8px;">
+      <i data-lucide="arrow-left" style="width:14px;height:14px;"></i> Fournisseurs
+    </a>
+    <h1>{{ f.nom }}</h1>
+    <p>{{ f.categorie|capitalize }}{% if f.ninea %} · NINEA {{ f.ninea }}{% endif %}</p>
+  </div>
+  <div class="page-header-actions">
+    <a href="{{ url_for('fournisseurs.modifier', fournisseur_id=f.id) }}" class="btn btn-secondary">
+      <i data-lucide="pencil" style="width:15px;height:15px;"></i> Modifier
+    </a>
+  </div>
+</div>
+
+<div style="display:grid;grid-template-columns:320px 1fr;gap:24px;align-items:start;">
+
+  <!-- Fiche fournisseur -->
+  <div style="display:flex;flex-direction:column;gap:16px;">
+    <div class="card" style="padding:0;overflow:hidden;border-radius:16px;">
+      <div style="background:#1A3A6B;padding:28px 20px 32px;text-align:center;">
+        <div style="width:72px;height:72px;border-radius:50%;border:3px solid rgba(255,255,255,0.4);
+                    background:rgba(255,255,255,0.15);display:flex;align-items:center;justify-content:center;
+                    font-size:24px;font-weight:700;color:#fff;margin:0 auto 14px;">
+          {{ f.nom[:2].upper() }}
+        </div>
+        <div style="font-size:20px;font-weight:700;color:#fff;margin-bottom:4px;">{{ f.nom }}</div>
+        <div style="font-size:16px;color:rgba(255,255,255,0.7);">{{ f.categorie|capitalize }}</div>
+      </div>
+      <div style="height:3px;background:linear-gradient(90deg,transparent,#B8860B 40%,#D4A017 50%,#B8860B 60%,transparent);"></div>
+      <div style="padding:16px;">
+        {% if f.telephone %}
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
+          <div style="width:32px;height:32px;border-radius:8px;background:var(--color-primary-soft);display:flex;align-items:center;justify-content:center;color:var(--color-primary);flex-shrink:0;">
+            <i data-lucide="phone" style="width:14px;height:14px;"></i>
+          </div>
+          <a href="tel:{{ f.telephone }}" style="font-size:16px;color:var(--fg-1);text-decoration:none;">{{ f.telephone }}</a>
+        </div>
+        {% endif %}
+        {% if f.email %}
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
+          <div style="width:32px;height:32px;border-radius:8px;background:var(--color-primary-soft);display:flex;align-items:center;justify-content:center;color:var(--color-primary);flex-shrink:0;">
+            <i data-lucide="mail" style="width:14px;height:14px;"></i>
+          </div>
+          <a href="mailto:{{ f.email }}" style="font-size:16px;color:var(--color-primary);text-decoration:none;word-break:break-all;">{{ f.email }}</a>
+        </div>
+        {% endif %}
+        {% if f.adresse %}
+        <div style="display:flex;align-items:flex-start;gap:10px;margin-bottom:12px;">
+          <div style="width:32px;height:32px;border-radius:8px;background:var(--color-primary-soft);display:flex;align-items:center;justify-content:center;color:var(--color-primary);flex-shrink:0;">
+            <i data-lucide="map-pin" style="width:14px;height:14px;"></i>
+          </div>
+          <span style="font-size:16px;color:var(--fg-2);line-height:1.4;">{{ f.adresse }}</span>
+        </div>
+        {% endif %}
+        {% if f.site_web %}
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
+          <div style="width:32px;height:32px;border-radius:8px;background:var(--color-primary-soft);display:flex;align-items:center;justify-content:center;color:var(--color-primary);flex-shrink:0;">
+            <i data-lucide="globe" style="width:14px;height:14px;"></i>
+          </div>
+          <a href="{{ f.site_web if f.site_web.startswith('http') else 'https://' ~ f.site_web }}" target="_blank"
+             style="font-size:16px;color:var(--color-primary);text-decoration:none;">{{ f.site_web }}</a>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- KPI -->
+    <div class="card" style="padding:16px;">
+      <div style="font-size:16px;color:var(--fg-3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;">Total dépensé</div>
+      <div style="font-size:26px;font-weight:700;color:var(--color-primary);">
+        {{ '{:,.0f}'.format(total).replace(',', ' ') }} <span style="font-size:16px;font-weight:400;">FCFA</span>
+      </div>
+      <div style="font-size:16px;color:var(--fg-3);margin-top:4px;">{{ depenses|length }} charge{{ 's' if depenses|length != 1 }}</div>
+    </div>
+
+    {% if f.notes %}
+    <div class="card" style="padding:16px;">
+      <div style="font-size:16px;font-weight:700;color:var(--fg-2);margin-bottom:8px;">Notes</div>
+      <p style="font-size:16px;color:var(--fg-2);line-height:1.6;white-space:pre-line;margin:0;">{{ f.notes }}</p>
+    </div>
+    {% endif %}
+
+    <!-- Danger -->
+    <div class="card" style="padding:16px;border-color:#FEE2E2;">
+      <div style="font-size:16px;font-weight:700;color:var(--fg-2);margin-bottom:12px;">Zone dangereuse</div>
+      <form method="POST" action="{{ url_for('fournisseurs.supprimer', fournisseur_id=f.id) }}"
+            onsubmit="return confirm('Supprimer ce fournisseur ?');">
+        <button type="submit" style="display:inline-flex;align-items:center;gap:6px;padding:8px 16px;
+                border-radius:8px;border:1.5px solid var(--border-default);background:#fff;
+                color:var(--fg-3);font-size:16px;font-weight:600;cursor:pointer;
+                transition:background 150ms,border-color 150ms,color 150ms;"
+                onmouseenter="this.style.background='var(--color-primary-soft)';this.style.borderColor='var(--color-primary)';this.style.color='var(--color-primary)'"
+                onmouseleave="this.style.background='#fff';this.style.borderColor='var(--border-default)';this.style.color='var(--fg-3)'">
+          <i data-lucide="trash-2" style="width:15px;height:15px;"></i> Supprimer
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Historique charges -->
+  <div class="card card-p0">
+    <div class="card-header">
+      <i data-lucide="receipt" style="width:18px;height:18px;color:var(--color-primary);"></i>
+      <div class="card-title">Historique des charges</div>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Libellé</th>
+            <th>Catégorie</th>
+            <th>Date</th>
+            <th>Montant</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for d in depenses %}
+          <tr>
+            <td>
+              <div style="font-weight:500;">{{ d.libelle }}</div>
+              {% if d.source == 'scan_recu' %}
+              <span class="pill pill-actif" style="font-size:16px;margin-top:4px;">
+                <i data-lucide="scan" style="width:12px;height:12px;"></i> Scan IA
+              </span>
+              {% endif %}
+            </td>
+            <td><span style="font-size:16px;color:var(--fg-3);">{{ d.categorie }}</span></td>
+            <td style="font-size:16px;color:var(--fg-3);">
+              {{ d.date_depense.strftime('%d/%m/%Y') if d.date_depense else '—' }}
+            </td>
+            <td style="font-weight:700;color:var(--color-primary);">
+              {{ '{:,.0f}'.format(d.montant).replace(',', ' ') }} FCFA
+            </td>
+          </tr>
+          {% else %}
+          <tr>
+            <td colspan="4" style="text-align:center;color:var(--fg-4);padding:32px;">
+              Aucune charge liée à ce fournisseur.
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+{% endblock %}

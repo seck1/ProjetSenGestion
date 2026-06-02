@@ -1,0 +1,80 @@
+{% extends "layouts/base.html" %}
+{% block title %}Factures{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div class="page-header-left">
+    <h1>Factures</h1>
+    <p>{{ factures|length }} facture{{ 's' if factures|length != 1 }}</p>
+  </div>
+</div>
+
+<div class="card card-p0">
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>N° Facture</th>
+          <th>Client</th>
+          <th>Date</th>
+          <th style="text-align:right;">Montant TTC</th>
+          <th>Statut</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for f in factures %}
+        {% set statut_map = {
+          'envoyee':   ('pill-envoye',  'send',           'Envoyée'),
+          'payee':     ('pill-signe',   'check-circle-2', 'Payée'),
+          'en_retard': ('pill-refuse',  'alert-triangle', 'En retard'),
+          'annulee':   ('pill-brouillon','x-circle',      'Annulée'),
+          'brouillon': ('pill-brouillon','pencil-line',   'Brouillon'),
+        } %}
+        {% set cls, icon, label = statut_map.get(f.statut, ('pill-brouillon','file','—')) %}
+        <tr>
+          <td><span style="font-family:monospace;font-size:16px;">{{ f.numero }}</span></td>
+          <td>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <div class="avatar" style="width:46px;height:46px;font-size:16px;background:#1A3A6B;">
+                {{ f.client.initiales if f.client else '?' }}
+              </div>
+              <div>
+                <div style="font-weight:600;font-size:16px;">{{ f.client.nom_complet if f.client else '' }}</div>
+                <div style="font-size:16px;color:#6B7280;">{{ f.client.entreprise or '' if f.client else '' }}</div>
+              </div>
+            </div>
+          </td>
+          <td style="font-size:16px;color:#6B7280;">{{ f.created_at.strftime('%d/%m/%y') }}</td>
+          <td class="amount">{{ "{:,.0f}".format(f.total_ttc or 0).replace(",", " ") }} FCFA</td>
+          <td>
+            <span class="pill {{ cls }}">
+              <i data-lucide="{{ icon }}" style="width:12px;height:12px;"></i> {{ label }}
+            </span>
+          </td>
+          <td>
+            <div style="display:flex;gap:6px;">
+              <a href="{{ url_for('factures.detail', facture_id=f.id) }}" class="btn-action">
+                <i data-lucide="eye" style="width:14px;height:14px;"></i> Voir
+              </a>
+              {% if f.statut != 'payee' %}
+              <form method="POST" action="{{ url_for('factures.marquer_payee', facture_id=f.id) }}" style="display:inline;">
+                <button type="submit" class="btn-action" style="cursor:pointer;">
+                  <i data-lucide="check" style="width:14px;height:14px;"></i> Payée
+                </button>
+              </form>
+              {% endif %}
+            </div>
+          </td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="6" style="text-align:center;padding:48px;color:#9CA3AF;">
+            Aucune facture. Les factures sont générées automatiquement depuis les devis signés.
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
